@@ -12,6 +12,6 @@
     "skipLibCheck": true,
     "sourceMap": true
   },
-  "include": ["agent/**/*", "capture/**/*", "utils/**/*"],
+  "include": ["agent/**/*", "capture/**/*", "utils/**/*", "scripts/**/*"],
   "exclude": ["node_modules", "dist", "output"]
 }

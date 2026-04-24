@@ -2,268 +2,673 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Mock Data Modeler — demo-agent fixture</title>
+  <title>Quest Data Modeler — mock fixture</title>
   <style>
     :root {
-      --bg: #0f172a;
+      --bg: #0b1220;
       --panel: #111827;
       --panel-2: #1f2937;
+      --panel-3: #273244;
       --text: #e5e7eb;
       --muted: #9ca3af;
       --accent: #3b82f6;
       --accent-2: #10b981;
+      --danger: #ef4444;
       --line: #334155;
+      --line-soft: #1e293b;
+      --shadow: 0 8px 24px rgba(0,0,0,0.35);
     }
     * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font: 14px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
-      min-height: 100vh;
+      font: 13px/1.45 -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
     }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 20px;
+    /* ---------- app chrome ---------- */
+    header.app-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px;
       background: var(--panel);
       border-bottom: 1px solid var(--line);
     }
-    header h1 { font-size: 15px; margin: 0; font-weight: 600; }
-    header .tag { color: var(--muted); font-size: 12px; margin-left: 8px; }
-    .layout { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 53px); }
-    nav {
+    header .brand { display: flex; align-items: center; gap: 10px; }
+    header .brand-mark {
+      width: 24px; height: 24px; border-radius: 6px;
+      background: linear-gradient(135deg, #3b82f6, #10b981);
+    }
+    header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: 0.2px; }
+    header .tag { color: var(--muted); font-size: 12px; }
+    header nav.top-nav { display: flex; gap: 4px; }
+    header nav.top-nav button {
+      background: transparent; color: var(--muted); border: 0; cursor: pointer;
+      font-size: 13px; padding: 6px 12px; border-radius: 6px;
+    }
+    header nav.top-nav button.active { color: var(--text); background: var(--panel-2); }
+    header .user-chip {
+      display: flex; align-items: center; gap: 8px;
+      color: var(--muted); font-size: 12px;
+    }
+    header .avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--panel-3); color: var(--text);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600;
+    }
+
+    /* ---------- buttons ---------- */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--panel-2); color: var(--text);
+      border: 1px solid var(--line); border-radius: 6px;
+      padding: 8px 12px; font-size: 13px; cursor: pointer;
+      transition: border-color 120ms, background 120ms;
+    }
+    .btn:hover:not([disabled]) { border-color: var(--accent); }
+    .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .btn.primary:hover:not([disabled]) { filter: brightness(1.1); }
+    .btn.success { background: var(--accent-2); border-color: var(--accent-2); color: white; }
+    .btn.ghost { background: transparent; }
+    .btn.small { padding: 5px 10px; font-size: 12px; }
+
+    /* ---------- home screen ---------- */
+    #screen-home { padding: 28px 40px; }
+    #screen-home h2 { font-size: 22px; margin: 0 0 4px; }
+    #screen-home .sub { color: var(--muted); margin-bottom: 24px; font-size: 13px; }
+    .home-cta {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 18px; margin-bottom: 22px;
+      background: linear-gradient(135deg, rgba(59,130,246,0.14), rgba(16,185,129,0.10));
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .home-cta .copy h3 { margin: 0 0 2px; font-size: 14px; }
+    .home-cta .copy p { margin: 0; color: var(--muted); font-size: 12px; }
+    .recent-heading {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .recent-heading h3 { margin: 0; font-size: 14px; font-weight: 600; }
+    .recent-heading .link { color: var(--accent); font-size: 12px; text-decoration: none; }
+    .model-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .model-card {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+      padding: 14px 16px; cursor: pointer;
+      transition: border-color 120ms, transform 120ms;
+    }
+    .model-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .model-card h4 { margin: 0 0 4px; font-size: 14px; }
+    .model-card .meta { color: var(--muted); font-size: 11px; }
+    .model-card .tag-chip {
+      display: inline-block; margin-top: 10px;
+      background: var(--panel-2); border: 1px solid var(--line);
+      padding: 2px 8px; border-radius: 999px; font-size: 11px; color: var(--muted);
+    }
+
+    /* ---------- editor screen ---------- */
+    #screen-editor { display: grid; grid-template-rows: auto 1fr; height: calc(100vh - 53px); }
+    #screen-editor.hidden { display: none; }
+    .editor-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+    .editor-toolbar .crumbs { color: var(--muted); font-size: 12px; }
+    .editor-toolbar .crumbs strong { color: var(--text); font-weight: 600; }
+    .editor-toolbar .actions { display: flex; gap: 8px; }
+    .editor-body { display: grid; grid-template-columns: 220px 1fr 280px; height: 100%; }
+    .editor-col {
       background: var(--panel);
       border-right: 1px solid var(--line);
-      padding: 16px;
+      overflow: auto;
     }
-    nav button, .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-      padding: 10px 12px;
-      margin-bottom: 8px;
-      background: var(--panel-2);
-      color: var(--text);
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-      text-align: left;
+    .editor-col.right { border-right: 0; border-left: 1px solid var(--line); }
+    .col-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-bottom: 1px solid var(--line-soft);
+      text-transform: uppercase; font-size: 10px; letter-spacing: 0.8px;
+      color: var(--muted);
     }
-    nav button:hover, .btn:hover { border-color: var(--accent); }
-    nav button.primary { background: var(--accent); border-color: var(--accent); }
-    main { padding: 20px; }
+    .entity-list { list-style: none; padding: 6px 8px; margin: 0; }
+    .entity-list li {
+      padding: 8px 10px; border-radius: 6px; cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      color: var(--text); font-size: 13px;
+    }
+    .entity-list li:hover { background: var(--panel-2); }
+    .entity-list li.selected { background: rgba(59,130,246,0.15); outline: 1px solid rgba(59,130,246,0.5); }
+    .entity-list .dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+    }
+
+    /* ---------- canvas ---------- */
     #model-canvas {
       position: relative;
       background:
         linear-gradient(var(--panel-2) 1px, transparent 1px) 0 0 / 24px 24px,
         linear-gradient(90deg, var(--panel-2) 1px, transparent 1px) 0 0 / 24px 24px,
-        #0b1220;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      min-height: 520px;
+        var(--bg);
       overflow: hidden;
-    }
-    #model-canvas.hidden { display: none; }
-    .empty-canvas {
-      display: flex; align-items: center; justify-content: center;
-      height: 520px; color: var(--muted); font-size: 13px;
     }
     .entity {
       position: absolute;
-      min-width: 180px;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.35);
-      overflow: hidden;
+      min-width: 190px;
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 6px; box-shadow: var(--shadow);
+      overflow: hidden; user-select: none;
     }
-    .entity header {
-      background: var(--accent);
-      border-bottom: 1px solid var(--line);
-      padding: 8px 12px;
-      font-weight: 600;
-      font-size: 13px;
+    .entity.selected { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .entity header.entity-title {
+      background: var(--accent); color: white;
+      padding: 7px 12px; font-weight: 600; font-size: 13px;
+      display: block; border-bottom: 0;
     }
     .entity ul { list-style: none; padding: 6px 0; margin: 0; }
-    .entity li { padding: 4px 12px; font-size: 12px; color: var(--muted); }
-    .entity li b { color: var(--text); font-weight: 500; }
-    .toolbar {
-      display: flex; gap: 8px; margin-bottom: 12px;
+    .entity li {
+      padding: 4px 12px; font-size: 12px; color: var(--muted);
+      display: flex; justify-content: space-between; gap: 8px;
     }
-    .toolbar .btn { width: auto; }
+    .entity li b { color: var(--text); font-weight: 500; }
+    .entity li .pk { color: var(--accent-2); font-size: 10px; font-weight: 600; }
+    svg.relations { position: absolute; inset: 0; pointer-events: none; }
+    .relation-line { stroke: var(--accent-2); stroke-width: 2; fill: none; }
+    .relation-label {
+      fill: var(--text); font-size: 11px;
+      paint-order: stroke; stroke: var(--bg); stroke-width: 4;
+    }
+
+    /* ---------- attributes panel ---------- */
+    #attributes-panel { padding: 0; }
+    #attributes-panel.empty .attr-body, #attributes-panel.empty .attr-add { display: none; }
+    #attributes-panel .empty-hint { padding: 24px 14px; color: var(--muted); font-size: 12px; text-align: center; }
+    #attributes-panel .attr-head {
+      padding: 12px 14px; border-bottom: 1px solid var(--line-soft);
+    }
+    #attributes-panel .attr-head .name { font-size: 14px; font-weight: 600; }
+    #attributes-panel .attr-head .type { color: var(--muted); font-size: 11px; }
+    .attr-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+    }
+    .attr-table th, .attr-table td {
+      padding: 6px 12px; text-align: left;
+      border-bottom: 1px solid var(--line-soft); color: var(--muted);
+    }
+    .attr-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; }
+    .attr-table td b { color: var(--text); font-weight: 500; }
+    .attr-table .pk-chip {
+      background: rgba(16,185,129,0.15); color: var(--accent-2);
+      padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;
+    }
+    .attr-add { padding: 10px 14px; border-top: 1px solid var(--line-soft); }
+
+    /* ---------- modals ---------- */
     .modal-backdrop {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.55);
-      display: none;
-      align-items: center; justify-content: center;
+      display: none; align-items: center; justify-content: center;
+      z-index: 20;
     }
     .modal-backdrop.visible { display: flex; }
     .modal {
-      width: 360px;
+      width: 420px;
       background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 18px;
+      border: 1px solid var(--line); border-radius: 10px;
+      padding: 18px; box-shadow: var(--shadow);
     }
-    .modal h3 { margin: 0 0 12px; font-size: 14px; }
-    .modal input {
-      width: 100%;
-      padding: 8px 10px;
-      background: var(--panel-2);
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      color: var(--text);
-      font-size: 13px;
+    .modal h3 { margin: 0 0 12px; font-size: 15px; }
+    .modal label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+    .modal input, .modal select {
+      width: 100%; padding: 8px 10px;
+      background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px;
+      color: var(--text); font-size: 13px;
     }
+    .modal .radio-row { display: flex; gap: 8px; }
+    .modal .radio-row label {
+      flex: 1; margin: 0; padding: 8px 10px;
+      background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px;
+      display: flex; align-items: center; gap: 8px; cursor: pointer;
+      color: var(--text); font-size: 12px;
+    }
+    .modal .radio-row input[type="radio"] { width: auto; }
+    .modal .checkbox-row {
+      display: flex; gap: 16px; margin-top: 10px; color: var(--muted); font-size: 12px;
+    }
+    .modal .checkbox-row label {
+      display: flex; gap: 6px; margin: 0; color: var(--text);
+      align-items: center;
+    }
+    .modal .checkbox-row input { width: auto; }
     .modal .actions {
-      display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;
+      display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;
     }
-    svg.relations { position: absolute; inset: 0; pointer-events: none; }
-    #status {
-      position: fixed; bottom: 12px; right: 12px;
-      background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
-      padding: 8px 12px; font-size: 12px; color: var(--muted);
+
+    /* ---------- toast ---------- */
+    #toast {
+      position: fixed; bottom: 18px; right: 18px;
+      background: var(--panel); color: var(--text);
+      border: 1px solid var(--line); border-left: 3px solid var(--accent-2);
+      padding: 10px 14px; border-radius: 6px; font-size: 12px;
+      box-shadow: var(--shadow);
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 150ms, transform 150ms;
+      pointer-events: none;
     }
+    #toast.visible { opacity: 1; transform: translateY(0); }
   </style>
 </head>
 <body>
-  <header>
-    <div>
+  <header class="app-bar">
+    <div class="brand">
+      <span class="brand-mark"></span>
       <h1>Quest Data Modeler</h1>
-      <span class="tag">(mock fixture — demo-agent Phase 1)</span>
+      <span class="tag">(mock fixture)</span>
     </div>
-    <div class="tag">mock-modeler.html</div>
+    <nav class="top-nav">
+      <button class="active" id="nav-home">Home</button>
+      <button id="nav-models">Models</button>
+      <button id="nav-catalogs">Catalogs</button>
+      <button id="nav-settings">Settings</button>
+    </nav>
+    <div class="user-chip">
+      <span class="avatar">AD</span>
+      <span>adminuser</span>
+    </div>
   </header>
 
-  <div class="layout">
-    <nav>
-      <button id="new-model" class="primary">＋ New Model</button>
-      <button id="add-entity" disabled>＋ Add Entity</button>
-      <button id="add-relationship" disabled>↔ Add Relationship</button>
-      <button id="save-model" disabled>💾 Save Model</button>
-    </nav>
-    <main>
-      <div class="toolbar">
-        <span id="model-title" class="tag">No model open</span>
+  <!-- ============ HOME ============ -->
+  <section id="screen-home">
+    <h2>Welcome back, Admin</h2>
+    <div class="sub">Pick up where you left off, or start a new model.</div>
+
+    <div class="home-cta">
+      <div class="copy">
+        <h3>Start a new data model</h3>
+        <p>Create a logical or physical model and begin adding entities.</p>
       </div>
-      <div id="model-canvas" class="hidden">
+      <button class="btn primary" id="new-model">+ New Model</button>
+    </div>
+
+    <div class="recent-heading">
+      <h3>Recent models</h3>
+      <a class="link" href="#">View all</a>
+    </div>
+    <div class="model-grid">
+      <div class="model-card">
+        <h4>Sales DB</h4>
+        <div class="meta">Updated 2 days ago · 12 entities</div>
+        <span class="tag-chip">Physical · PostgreSQL</span>
+      </div>
+      <div class="model-card">
+        <h4>Inventory</h4>
+        <div class="meta">Updated last week · 6 entities</div>
+        <span class="tag-chip">Logical</span>
+      </div>
+      <div class="model-card">
+        <h4>HR Directory</h4>
+        <div class="meta">Updated 3 weeks ago · 9 entities</div>
+        <span class="tag-chip">Physical · MySQL</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EDITOR ============ -->
+  <section id="screen-editor" class="hidden">
+    <div class="editor-toolbar">
+      <div class="crumbs">Home / <strong id="crumb-model-name">Untitled Model</strong></div>
+      <div class="actions">
+        <button class="btn" id="add-entity">+ Add Entity</button>
+        <button class="btn" id="add-relationship" disabled>↔ Add Relationship</button>
+        <button class="btn primary" id="save-model">💾 Save</button>
+      </div>
+    </div>
+    <div class="editor-body">
+      <aside class="editor-col left">
+        <div class="col-header"><span>Entities</span><span id="entity-count">0</span></div>
+        <ul class="entity-list" id="entity-list"></ul>
+      </aside>
+
+      <div id="model-canvas">
         <svg class="relations" id="relations"></svg>
       </div>
-      <div id="empty" class="empty-canvas">Create a new model to begin.</div>
-    </main>
+
+      <aside class="editor-col right" id="attributes-panel">
+        <div class="col-header"><span>Attributes</span></div>
+        <div class="empty-hint" id="attr-empty-hint">Select an entity to view and edit its attributes.</div>
+        <div class="attr-head" style="display:none" id="attr-head">
+          <div class="name" id="attr-entity-name">—</div>
+          <div class="type">Entity</div>
+        </div>
+        <div class="attr-body" style="display:none" id="attr-body">
+          <table class="attr-table">
+            <thead><tr><th>Name</th><th>Type</th><th>Flags</th></tr></thead>
+            <tbody id="attr-rows"></tbody>
+          </table>
+        </div>
+        <div class="attr-add" style="display:none" id="attr-add">
+          <button class="btn small" id="add-attribute">+ Add Attribute</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ MODALS ============ -->
+  <div class="modal-backdrop" id="new-model-modal">
+    <div class="modal" role="dialog" aria-labelledby="new-model-title">
+      <h3 id="new-model-title">Create a new model</h3>
+      <label for="model-name">Model name</label>
+      <input id="model-name" placeholder="e.g. Customer DB" autocomplete="off" />
+      <label>Model type</label>
+      <div class="radio-row">
+        <label><input type="radio" name="model-type" id="model-type-logical" value="logical" checked /> Logical</label>
+        <label><input type="radio" name="model-type" id="model-type-physical" value="physical" /> Physical</label>
+        <label><input type="radio" name="model-type" id="model-type-both" value="both" /> Both</label>
+      </div>
+      <label for="model-notation">Notation</label>
+      <select id="model-notation">
+        <option>IE (Crow's foot)</option>
+        <option>IDEF1X</option>
+        <option>UML</option>
+      </select>
+      <div class="actions">
+        <button class="btn ghost" id="new-model-cancel">Cancel</button>
+        <button class="btn primary" id="create-model-confirm">Create model</button>
+      </div>
+    </div>
   </div>
 
   <div class="modal-backdrop" id="entity-modal">
     <div class="modal">
-      <h3>New Entity</h3>
-      <input id="entity-name" placeholder="Entity name (e.g. Customer)" autocomplete="off" />
+      <h3>New entity</h3>
+      <label for="entity-name">Entity name</label>
+      <input id="entity-name" placeholder="e.g. Customer" autocomplete="off" />
       <div class="actions">
-        <button class="btn" id="entity-cancel">Cancel</button>
-        <button class="btn" id="entity-confirm">Create</button>
+        <button class="btn ghost" id="entity-cancel">Cancel</button>
+        <button class="btn primary" id="entity-confirm">Create entity</button>
       </div>
     </div>
   </div>
 
-  <div id="status">ready</div>
+  <div class="modal-backdrop" id="attribute-modal">
+    <div class="modal">
+      <h3>Add attribute</h3>
+      <label for="attr-name">Attribute name</label>
+      <input id="attr-name" placeholder="e.g. email" autocomplete="off" />
+      <label for="attr-type">Type</label>
+      <select id="attr-type">
+        <option>varchar(255)</option>
+        <option>text</option>
+        <option>int</option>
+        <option>bigint</option>
+        <option>boolean</option>
+        <option>timestamp</option>
+        <option>uuid</option>
+      </select>
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="attr-pk" /> Primary key</label>
+        <label><input type="checkbox" id="attr-nullable" checked /> Nullable</label>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="attr-cancel">Cancel</button>
+        <button class="btn primary" id="attr-confirm">Add attribute</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="relationship-modal">
+    <div class="modal">
+      <h3>New relationship</h3>
+      <label for="rel-source">Source</label>
+      <select id="rel-source"></select>
+      <label for="rel-target">Target</label>
+      <select id="rel-target"></select>
+      <label for="rel-cardinality">Cardinality</label>
+      <select id="rel-cardinality">
+        <option>1 : 1</option>
+        <option selected>1 : N</option>
+        <option>N : N</option>
+      </select>
+      <div class="actions">
+        <button class="btn ghost" id="rel-cancel">Cancel</button>
+        <button class="btn primary" id="rel-confirm">Create relationship</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" role="status"></div>
 
   <script>
     (function () {
-      const btnNew = document.getElementById("new-model");
-      const btnAddEntity = document.getElementById("add-entity");
-      const btnAddRel = document.getElementById("add-relationship");
-      const btnSave = document.getElementById("save-model");
-      const canvas = document.getElementById("model-canvas");
-      const empty = document.getElementById("empty");
-      const title = document.getElementById("model-title");
-      const modal = document.getElementById("entity-modal");
-      const entityInput = document.getElementById("entity-name");
-      const entityConfirm = document.getElementById("entity-confirm");
-      const entityCancel = document.getElementById("entity-cancel");
-      const status = document.getElementById("status");
-      const relationsSvg = document.getElementById("relations");
+      const $ = (id) => document.getElementById(id);
+      const state = { model: null, entities: [], relationships: [], selectedId: null, nextId: 1 };
 
-      const state = { entities: [], relations: [] };
+      const home = $("screen-home");
+      const editor = $("screen-editor");
+      const canvas = $("model-canvas");
+      const relationsSvg = $("relations");
+      const crumb = $("crumb-model-name");
+      const entityList = $("entity-list");
+      const entityCount = $("entity-count");
+      const toast = $("toast");
 
-      function setStatus(msg) { status.textContent = msg; }
+      // modal helpers
+      function show(id) { $(id).classList.add("visible"); setTimeout(() => {
+        const first = $(id).querySelector("input, select");
+        if (first) first.focus();
+      }, 50); }
+      function hide(id) { $(id).classList.remove("visible"); }
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add("visible");
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => toast.classList.remove("visible"), 2500);
+      }
 
-      btnNew.addEventListener("click", () => {
-        state.entities = []; state.relations = [];
-        canvas.classList.remove("hidden");
-        canvas.querySelectorAll(".entity").forEach((n) => n.remove());
-        relationsSvg.innerHTML = "";
-        empty.style.display = "none";
-        title.textContent = "Untitled Model";
-        btnAddEntity.disabled = false;
-        btnSave.disabled = false;
-        btnAddRel.disabled = true;
-        setStatus("model created");
+      // ---- home → new model ----
+      $("new-model").addEventListener("click", () => {
+        $("model-name").value = "";
+        show("new-model-modal");
+      });
+      $("new-model-cancel").addEventListener("click", () => hide("new-model-modal"));
+
+      $("create-model-confirm").addEventListener("click", () => {
+        const name = ($("model-name").value || "Untitled Model").trim() || "Untitled Model";
+        const type = document.querySelector('input[name="model-type"]:checked').value;
+        const notation = $("model-notation").value;
+        state.model = { name, type, notation };
+        hide("new-model-modal");
+        home.style.display = "none";
+        editor.classList.remove("hidden");
+        crumb.textContent = name;
+        showToast("Model created: " + name);
       });
 
-      function openEntityModal() {
-        modal.classList.add("visible");
-        entityInput.value = "";
-        setTimeout(() => entityInput.focus(), 50);
-      }
-      function closeEntityModal() { modal.classList.remove("visible"); }
-
-      btnAddEntity.addEventListener("click", openEntityModal);
+      // ---- add entity ----
+      $("add-entity").addEventListener("click", () => {
+        $("entity-name").value = "";
+        show("entity-modal");
+      });
+      $("entity-cancel").addEventListener("click", () => hide("entity-modal"));
+      $("entity-confirm").addEventListener("click", () => {
+        const name = ($("entity-name").value || "").trim();
+        if (!name) { showToast("Entity name required"); return; }
+        createEntity(name);
+        hide("entity-modal");
+      });
+      $("entity-name").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); $("entity-confirm").click(); }
+        if (e.key === "Escape") hide("entity-modal");
+      });
 
       function createEntity(name) {
+        const id = "E" + (state.nextId++);
         const idx = state.entities.length;
         const el = document.createElement("div");
         el.className = "entity";
-        el.style.left = 40 + idx * 240 + "px";
-        el.style.top = 60 + (idx % 2) * 40 + "px";
+        el.dataset.entityId = id;
+        el.style.left = 40 + idx * 260 + "px";
+        el.style.top = 60 + (idx % 2) * 50 + "px";
         el.innerHTML =
-          "<header>" + name + "</header>" +
-          "<ul>" +
-          "<li><b>id</b> — uuid (PK)</li>" +
-          "<li><b>created_at</b> — timestamp</li>" +
-          "</ul>";
+          '<header class="entity-title">' + name + "</header>" +
+          '<ul><li><b>id</b><span class="pk">PK · uuid</span></li>' +
+          '<li><b>created_at</b><span>timestamp</span></li></ul>';
+        el.addEventListener("click", () => selectEntity(id));
         canvas.appendChild(el);
-        state.entities.push({ name, el });
-        if (state.entities.length >= 2) btnAddRel.disabled = false;
-        setStatus("added entity: " + name);
+
+        const entity = {
+          id, name, el,
+          attributes: [
+            { name: "id", type: "uuid", pk: true, nullable: false },
+            { name: "created_at", type: "timestamp", pk: false, nullable: false },
+          ],
+        };
+        state.entities.push(entity);
+
+        // sidebar list row
+        const li = document.createElement("li");
+        li.dataset.entityId = id;
+        li.innerHTML = '<span class="dot"></span><span>' + name + "</span>";
+        li.addEventListener("click", () => selectEntity(id));
+        entityList.appendChild(li);
+        entityCount.textContent = String(state.entities.length);
+
+        if (state.entities.length >= 2) $("add-relationship").disabled = false;
+        selectEntity(id);
+        showToast("Added entity: " + name);
       }
 
-      function confirmEntity() {
-        const name = (entityInput.value || "").trim();
-        if (!name) { setStatus("entity name required"); return; }
-        closeEntityModal();
-        createEntity(name);
+      function selectEntity(id) {
+        state.selectedId = id;
+        document.querySelectorAll(".entity").forEach((n) =>
+          n.classList.toggle("selected", n.dataset.entityId === id),
+        );
+        document.querySelectorAll("#entity-list li").forEach((n) =>
+          n.classList.toggle("selected", n.dataset.entityId === id),
+        );
+        renderAttributes();
       }
 
-      entityConfirm.addEventListener("click", confirmEntity);
-      entityCancel.addEventListener("click", closeEntityModal);
-      entityInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") { e.preventDefault(); confirmEntity(); }
-        if (e.key === "Escape") closeEntityModal();
+      function renderAttributes() {
+        const e = state.entities.find((x) => x.id === state.selectedId);
+        const hint = $("attr-empty-hint");
+        const head = $("attr-head");
+        const body = $("attr-body");
+        const addBar = $("attr-add");
+        if (!e) {
+          hint.style.display = "block";
+          head.style.display = body.style.display = addBar.style.display = "none";
+          return;
+        }
+        hint.style.display = "none";
+        head.style.display = body.style.display = addBar.style.display = "block";
+        $("attr-entity-name").textContent = e.name;
+        const rows = e.attributes.map((a) => {
+          const flags = [];
+          if (a.pk) flags.push('<span class="pk-chip">PK</span>');
+          if (!a.nullable) flags.push("NOT NULL");
+          return "<tr><td><b>" + a.name + "</b></td><td>" + a.type + "</td><td>" + flags.join(" ") + "</td></tr>";
+        }).join("");
+        $("attr-rows").innerHTML = rows;
+        renderEntityCard(e);
+      }
+
+      function renderEntityCard(e) {
+        const ul = e.el.querySelector("ul");
+        ul.innerHTML = e.attributes.map((a) => {
+          const tag = a.pk ? '<span class="pk">PK · ' + a.type + "</span>" : "<span>" + a.type + "</span>";
+          return "<li><b>" + a.name + "</b>" + tag + "</li>";
+        }).join("");
+      }
+
+      // ---- add attribute ----
+      $("add-attribute").addEventListener("click", () => {
+        $("attr-name").value = "";
+        $("attr-type").selectedIndex = 0;
+        $("attr-pk").checked = false;
+        $("attr-nullable").checked = true;
+        show("attribute-modal");
+      });
+      $("attr-cancel").addEventListener("click", () => hide("attribute-modal"));
+      $("attr-confirm").addEventListener("click", () => {
+        const e = state.entities.find((x) => x.id === state.selectedId);
+        if (!e) return;
+        const name = ($("attr-name").value || "").trim();
+        if (!name) { showToast("Attribute name required"); return; }
+        e.attributes.push({
+          name,
+          type: $("attr-type").value,
+          pk: $("attr-pk").checked,
+          nullable: $("attr-nullable").checked,
+        });
+        hide("attribute-modal");
+        renderAttributes();
+        showToast("Added attribute: " + name + " on " + e.name);
       });
 
-      btnAddRel.addEventListener("click", () => {
-        if (state.entities.length < 2) return;
-        const a = state.entities[state.entities.length - 2].el;
-        const b = state.entities[state.entities.length - 1].el;
-        const ra = a.getBoundingClientRect();
-        const rb = b.getBoundingClientRect();
+      // ---- relationships ----
+      $("add-relationship").addEventListener("click", () => {
+        const s = $("rel-source"), t = $("rel-target");
+        s.innerHTML = t.innerHTML = state.entities.map((e) =>
+          '<option value="' + e.id + '">' + e.name + "</option>",
+        ).join("");
+        if (state.entities.length >= 2) {
+          s.selectedIndex = 0;
+          t.selectedIndex = 1;
+        }
+        show("relationship-modal");
+      });
+      $("rel-cancel").addEventListener("click", () => hide("relationship-modal"));
+      $("rel-confirm").addEventListener("click", () => {
+        const srcId = $("rel-source").value;
+        const tgtId = $("rel-target").value;
+        const card = $("rel-cardinality").value;
+        if (srcId === tgtId) { showToast("Source and target must differ"); return; }
+        hide("relationship-modal");
+        drawRelationship(srcId, tgtId, card);
+        showToast("Relationship created (" + card + ")");
+      });
+
+      function drawRelationship(srcId, tgtId, card) {
+        const src = state.entities.find((e) => e.id === srcId);
+        const tgt = state.entities.find((e) => e.id === tgtId);
+        if (!src || !tgt) return;
         const cb = canvas.getBoundingClientRect();
+        const ra = src.el.getBoundingClientRect();
+        const rb = tgt.el.getBoundingClientRect();
         const x1 = ra.right - cb.left, y1 = ra.top + ra.height / 2 - cb.top;
         const x2 = rb.left - cb.left,  y2 = rb.top + rb.height / 2 - cb.top;
-        const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        line.setAttribute("d", "M" + x1 + "," + y1 + " C " + (x1 + 60) + "," + y1 + " " + (x2 - 60) + "," + y2 + " " + x2 + "," + y2);
-        line.setAttribute("stroke", "#10b981");
-        line.setAttribute("stroke-width", "2");
-        line.setAttribute("fill", "none");
-        relationsSvg.appendChild(line);
-        state.relations.push({ from: state.entities[0].name, to: state.entities[1].name });
-        setStatus("relationship created");
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", "M" + x1 + "," + y1 + " C " + (x1 + 60) + "," + y1 + " " + (x2 - 60) + "," + y2 + " " + x2 + "," + y2);
+        path.setAttribute("class", "relation-line");
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", String((x1 + x2) / 2));
+        label.setAttribute("y", String((y1 + y2) / 2 - 6));
+        label.setAttribute("class", "relation-label");
+        label.setAttribute("text-anchor", "middle");
+        label.textContent = card;
+        g.appendChild(path); g.appendChild(label);
+        relationsSvg.appendChild(g);
+        state.relationships.push({ srcId, tgtId, card });
+      }
+
+      // ---- save ----
+      $("save-model").addEventListener("click", () => {
+        if (!state.model) { showToast("No model to save"); return; }
+        showToast("✓ Model saved: " + state.model.name);
       });
 
-      btnSave.addEventListener("click", () => setStatus("model saved (mock)"));
+      // keyboard: Escape closes any open modal
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          document.querySelectorAll(".modal-backdrop.visible").forEach((m) => m.classList.remove("visible"));
+        }
+      });
     })();
   </script>
 </body>

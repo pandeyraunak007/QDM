@@ -1,21 +1,37 @@
 {
-  "flow_name": "Local Mock — Create ER Model",
+  "flow_name": "Local Mock — Full ER Modeling Walkthrough",
   "base_url": "fixtures/mock-modeler.html",
   "steps": [
     {
       "action": "wait",
       "selector": "#new-model",
-      "label": "Wait for Quest Data Modeler shell"
+      "label": "Open Quest Data Modeler home"
     },
     {
       "action": "click",
       "selector": "#new-model",
-      "label": "Click New Model"
+      "label": "Click New Model to start a new data model"
+    },
+    {
+      "action": "type",
+      "selector": "#model-name",
+      "value": "Customer DB",
+      "label": "Name the model Customer DB"
+    },
+    {
+      "action": "click",
+      "selector": "#model-type-physical",
+      "label": "Choose Physical model type"
+    },
+    {
+      "action": "click",
+      "selector": "#create-model-confirm",
+      "label": "Create the model and open the diagram editor"
     },
     {
       "action": "waitForCanvas",
       "selector": "#model-canvas",
-      "label": "Wait for modeling canvas to render"
+      "label": "Wait for the modeling canvas to render"
     },
     {
       "action": "click",
@@ -26,13 +42,28 @@
       "action": "type",
       "selector": "#entity-name",
       "value": "Customer",
-      "label": "Name the entity as Customer"
+      "label": "Name the first entity Customer"
     },
     {
-      "action": "press",
-      "selector": "#entity-name",
-      "value": "Enter",
-      "label": "Confirm the Customer entity"
+      "action": "click",
+      "selector": "#entity-confirm",
+      "label": "Create the Customer entity"
+    },
+    {
+      "action": "click",
+      "selector": "#add-attribute",
+      "label": "Add an attribute to Customer"
+    },
+    {
+      "action": "type",
+      "selector": "#attr-name",
+      "value": "email",
+      "label": "Name the attribute email"
+    },
+    {
+      "action": "click",
+      "selector": "#attr-confirm",
+      "label": "Save the email attribute on Customer"
     },
     {
       "action": "click",
@@ -43,29 +74,54 @@
       "action": "type",
       "selector": "#entity-name",
       "value": "Orders",
-      "label": "Name the entity as Orders"
+      "label": "Name the second entity Orders"
     },
     {
-      "action": "press",
-      "selector": "#entity-name",
-      "value": "Enter",
-      "label": "Confirm the Orders entity"
+      "action": "click",
+      "selector": "#entity-confirm",
+      "label": "Create the Orders entity"
+    },
+    {
+      "action": "click",
+      "selector": "#add-attribute",
+      "label": "Add an attribute to Orders"
+    },
+    {
+      "action": "type",
+      "selector": "#attr-name",
+      "value": "total_amount",
+      "label": "Name the attribute total_amount"
+    },
+    {
+      "action": "click",
+      "selector": "#attr-confirm",
+      "label": "Save the total_amount attribute on Orders"
     },
     {
       "action": "click",
       "selector": "#add-relationship",
-      "label": "Create relationship Customer → Orders"
+      "label": "Open the Relationship dialog"
+    },
+    {
+      "action": "click",
+      "selector": "#rel-confirm",
+      "label": "Create a 1:N relationship from Customer to Orders"
     },
     {
       "action": "waitForCanvas",
       "selector": "#model-canvas",
       "label": "Render the updated ER diagram",
-      "delayMs": 1000
+      "delayMs": 800
     },
     {
       "action": "click",
       "selector": "#save-model",
       "label": "Save the model"
+    },
+    {
+      "action": "wait",
+      "delayMs": 800,
+      "label": "Confirm the save toast is visible"
     }
   ]
 }
