@@ -6,6 +6,8 @@
   "scripts": {
     "build": "tsc",
     "demo": "ts-node agent/runner.ts",
+    "bootstrap": "ts-node scripts/bootstrap.ts",
+    "recon": "ts-node scripts/recon.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

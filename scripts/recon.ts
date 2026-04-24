@@ -46,7 +46,8 @@ async function main(): Promise<void> {
   logger.info(`recon URL: ${url}`);
   logger.info(`output: ${outDir}`);
 
-  const browser = await chromium.launch({ headless: true });
+  const headless = process.env.QDM_HEADFUL ? false : true;
+  const browser = await chromium.launch({ headless });
   const ctx = await browser.newContext({
     viewport: { width: 1440, height: 900 },
     ignoreHTTPSErrors: true,
@@ -63,7 +64,12 @@ async function main(): Promise<void> {
       body: "/* stubbed by demo-agent recon */",
     }),
   );
-  page.on("pageerror", (e) => logger.warn(`pageerror: ${e.message}`));
+  page.on("pageerror", (e) => logger.warn(`pageerror: ${e.message}\n${e.stack ?? ""}`));
+  page.on("console", (msg) => {
+    if (msg.type() === "error" || msg.type() === "warning") {
+      logger.warn(`console.${msg.type()}: ${msg.text()}`);
+    }
+  });
   page.on("requestfailed", (req) =>
     logger.warn(`requestfailed: ${req.failure()?.errorText} ${req.url()}`),
   );

@@ -72,7 +72,46 @@ output/local_mock_create_er_model_2026-04-24T.../
 
 ## Run against a real Quest Data Modeler instance
 
-Either set `base_url` in the flow file, or override from the CLI:
+Real QDM instances typically sit behind SSO, and their SPA bundles often
+crash on cold (cookie-less) Playwright contexts before the login form can
+render. Use the one-time **bootstrap** step to capture an authenticated
+session, then all subsequent runs reuse it.
+
+**1. Bootstrap (once per session expiry)**
+
+```bash
+QDM_URL=http://your-instance/auth/login npm run bootstrap
+```
+
+A headful Chromium window opens, pointed at the login URL. Sign in
+manually — including any SSO / "Continue with Microsoft" flow. When the
+app finishes loading, close the browser window. The session (cookies,
+localStorage, service workers) is persisted to `.qdm-profile/`
+(gitignored).
+
+**2. Run a flow**
+
+```bash
+npm run demo -- --flow=createModel --url=http://your-instance
+```
+
+The runner auto-detects `.qdm-profile/` and reuses it via Playwright's
+`launchPersistentContext`. You land already-authenticated.
+
+Flags:
+
+- `--profile <dir>` — use an explicit profile directory
+- `--no-profile` — ignore any auto-detected profile and run fresh (useful
+  for the bundled mock)
+
+**Bonus helper — `npm run recon`.** Navigates to `QDM_URL`, logs in if
+`QDM_USER`/`QDM_PASS` are set, dumps the DOM selectors and network trace
+to `output/recon_<timestamp>/`. Useful for discovering real selectors
+before authoring a flow.
+
+### Without SSO / public URL
+
+If your instance doesn't need auth, skip bootstrap and use `--url`:
 
 ```bash
 npm run demo -- --flow=createModel --url=https://your-quest-instance.example.com

@@ -3,8 +3,12 @@ import { chromium, Browser, BrowserContext } from "playwright";
 import { Command } from "commander";
 import * as path from "path";
 import * as fs from "fs/promises";
+import { existsSync } from "fs";
 import { loadFlow, executeFlow } from "./flowExecutor";
 import { logger } from "../utils/logger";
+import { stubBrokenRuntimeConfig } from "../utils/routes";
+
+const DEFAULT_PROFILE_DIR = ".qdm-profile";
 
 interface CliOptions {
   flow?: string;
@@ -14,6 +18,8 @@ interface CliOptions {
   headless: boolean;
   viewport: string;
   slowMo: string;
+  profile?: string;
+  noProfile: boolean;
 }
 
 async function main(): Promise<void> {
@@ -28,6 +34,8 @@ async function main(): Promise<void> {
     .option("--headless", "run browser headless (default: headful for demos)", false)
     .option("--viewport <WxH>", "viewport size", "1440x900")
     .option("--slow-mo <ms>", "slow-motion delay between actions (ms)", "150")
+    .option("--profile <dir>", "persistent Chromium profile (for authenticated sessions)")
+    .option("--no-profile", "ignore any auto-detected .qdm-profile and run fresh", false)
     .parse(process.argv);
 
   const opts = program.opts<CliOptions>();
@@ -51,15 +59,29 @@ async function main(): Promise<void> {
     flow.base_url = normalizeUrl(flow.base_url);
   }
 
+  const profileDir = resolveProfileDir(opts);
+
   let browser: Browser | undefined;
   let context: BrowserContext | undefined;
   let exitCode = 0;
 
   try {
-    browser = await chromium.launch({ headless: opts.headless, slowMo });
-    context = await browser.newContext({ viewport });
-    const page = await context.newPage();
+    if (profileDir) {
+      logger.info(`using persistent profile: ${profileDir}`);
+      context = await chromium.launchPersistentContext(profileDir, {
+        headless: opts.headless,
+        slowMo,
+        viewport,
+        ignoreHTTPSErrors: true,
+      });
+    } else {
+      browser = await chromium.launch({ headless: opts.headless, slowMo });
+      context = await browser.newContext({ viewport, ignoreHTTPSErrors: true });
+    }
 
+    await stubBrokenRuntimeConfig(context);
+
+    const page = context.pages()[0] ?? (await context.newPage());
     page.on("pageerror", (err) => logger.warn(`pageerror: ${err.message}`));
     page.on("console", (msg) => {
       if (msg.type() === "error") logger.debug(`console.error: ${msg.text()}`);
@@ -79,6 +101,13 @@ async function main(): Promise<void> {
   }
 
   process.exit(exitCode);
+}
+
+function resolveProfileDir(opts: CliOptions): string | undefined {
+  if (opts.noProfile) return undefined;
+  if (opts.profile) return path.resolve(opts.profile);
+  if (existsSync(DEFAULT_PROFILE_DIR)) return path.resolve(DEFAULT_PROFILE_DIR);
+  return undefined;
 }
 
 function normalizeUrl(urlOrPath: string): string {
