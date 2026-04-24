@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Mock Data Modeler — demo-agent fixture</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #3b82f6;
+      --accent-2: #10b981;
+      --line: #334155;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+    header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+    header .tag { color: var(--muted); font-size: 12px; margin-left: 8px; }
+    .layout { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 53px); }
+    nav {
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      padding: 16px;
+    }
+    nav button, .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      text-align: left;
+    }
+    nav button:hover, .btn:hover { border-color: var(--accent); }
+    nav button.primary { background: var(--accent); border-color: var(--accent); }
+    main { padding: 20px; }
+    #model-canvas {
+      position: relative;
+      background:
+        linear-gradient(var(--panel-2) 1px, transparent 1px) 0 0 / 24px 24px,
+        linear-gradient(90deg, var(--panel-2) 1px, transparent 1px) 0 0 / 24px 24px,
+        #0b1220;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 520px;
+      overflow: hidden;
+    }
+    #model-canvas.hidden { display: none; }
+    .empty-canvas {
+      display: flex; align-items: center; justify-content: center;
+      height: 520px; color: var(--muted); font-size: 13px;
+    }
+    .entity {
+      position: absolute;
+      min-width: 180px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+      overflow: hidden;
+    }
+    .entity header {
+      background: var(--accent);
+      border-bottom: 1px solid var(--line);
+      padding: 8px 12px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .entity ul { list-style: none; padding: 6px 0; margin: 0; }
+    .entity li { padding: 4px 12px; font-size: 12px; color: var(--muted); }
+    .entity li b { color: var(--text); font-weight: 500; }
+    .toolbar {
+      display: flex; gap: 8px; margin-bottom: 12px;
+    }
+    .toolbar .btn { width: auto; }
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: none;
+      align-items: center; justify-content: center;
+    }
+    .modal-backdrop.visible { display: flex; }
+    .modal {
+      width: 360px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .modal h3 { margin: 0 0 12px; font-size: 14px; }
+    .modal input {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+    }
+    .modal .actions {
+      display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;
+    }
+    svg.relations { position: absolute; inset: 0; pointer-events: none; }
+    #status {
+      position: fixed; bottom: 12px; right: 12px;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+      padding: 8px 12px; font-size: 12px; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Quest Data Modeler</h1>
+      <span class="tag">(mock fixture — demo-agent Phase 1)</span>
+    </div>
+    <div class="tag">mock-modeler.html</div>
+  </header>
+
+  <div class="layout">
+    <nav>
+      <button id="new-model" class="primary">＋ New Model</button>
+      <button id="add-entity" disabled>＋ Add Entity</button>
+      <button id="add-relationship" disabled>↔ Add Relationship</button>
+      <button id="save-model" disabled>💾 Save Model</button>
+    </nav>
+    <main>
+      <div class="toolbar">
+        <span id="model-title" class="tag">No model open</span>
+      </div>
+      <div id="model-canvas" class="hidden">
+        <svg class="relations" id="relations"></svg>
+      </div>
+      <div id="empty" class="empty-canvas">Create a new model to begin.</div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="entity-modal">
+    <div class="modal">
+      <h3>New Entity</h3>
+      <input id="entity-name" placeholder="Entity name (e.g. Customer)" autocomplete="off" />
+      <div class="actions">
+        <button class="btn" id="entity-cancel">Cancel</button>
+        <button class="btn" id="entity-confirm">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="status">ready</div>
+
+  <script>
+    (function () {
+      const btnNew = document.getElementById("new-model");
+      const btnAddEntity = document.getElementById("add-entity");
+      const btnAddRel = document.getElementById("add-relationship");
+      const btnSave = document.getElementById("save-model");
+      const canvas = document.getElementById("model-canvas");
+      const empty = document.getElementById("empty");
+      const title = document.getElementById("model-title");
+      const modal = document.getElementById("entity-modal");
+      const entityInput = document.getElementById("entity-name");
+      const entityConfirm = document.getElementById("entity-confirm");
+      const entityCancel = document.getElementById("entity-cancel");
+      const status = document.getElementById("status");
+      const relationsSvg = document.getElementById("relations");
+
+      const state = { entities: [], relations: [] };
+
+      function setStatus(msg) { status.textContent = msg; }
+
+      btnNew.addEventListener("click", () => {
+        state.entities = []; state.relations = [];
+        canvas.classList.remove("hidden");
+        canvas.querySelectorAll(".entity").forEach((n) => n.remove());
+        relationsSvg.innerHTML = "";
+        empty.style.display = "none";
+        title.textContent = "Untitled Model";
+        btnAddEntity.disabled = false;
+        btnSave.disabled = false;
+        btnAddRel.disabled = true;
+        setStatus("model created");
+      });
+
+      function openEntityModal() {
+        modal.classList.add("visible");
+        entityInput.value = "";
+        setTimeout(() => entityInput.focus(), 50);
+      }
+      function closeEntityModal() { modal.classList.remove("visible"); }
+
+      btnAddEntity.addEventListener("click", openEntityModal);
+
+      function createEntity(name) {
+        const idx = state.entities.length;
+        const el = document.createElement("div");
+        el.className = "entity";
+        el.style.left = 40 + idx * 240 + "px";
+        el.style.top = 60 + (idx % 2) * 40 + "px";
+        el.innerHTML =
+          "<header>" + name + "</header>" +
+          "<ul>" +
+          "<li><b>id</b> — uuid (PK)</li>" +
+          "<li><b>created_at</b> — timestamp</li>" +
+          "</ul>";
+        canvas.appendChild(el);
+        state.entities.push({ name, el });
+        if (state.entities.length >= 2) btnAddRel.disabled = false;
+        setStatus("added entity: " + name);
+      }
+
+      function confirmEntity() {
+        const name = (entityInput.value || "").trim();
+        if (!name) { setStatus("entity name required"); return; }
+        closeEntityModal();
+        createEntity(name);
+      }
+
+      entityConfirm.addEventListener("click", confirmEntity);
+      entityCancel.addEventListener("click", closeEntityModal);
+      entityInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); confirmEntity(); }
+        if (e.key === "Escape") closeEntityModal();
+      });
+
+      btnAddRel.addEventListener("click", () => {
+        if (state.entities.length < 2) return;
+        const a = state.entities[state.entities.length - 2].el;
+        const b = state.entities[state.entities.length - 1].el;
+        const ra = a.getBoundingClientRect();
+        const rb = b.getBoundingClientRect();
+        const cb = canvas.getBoundingClientRect();
+        const x1 = ra.right - cb.left, y1 = ra.top + ra.height / 2 - cb.top;
+        const x2 = rb.left - cb.left,  y2 = rb.top + rb.height / 2 - cb.top;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        line.setAttribute("d", "M" + x1 + "," + y1 + " C " + (x1 + 60) + "," + y1 + " " + (x2 - 60) + "," + y2 + " " + x2 + "," + y2);
+        line.setAttribute("stroke", "#10b981");
+        line.setAttribute("stroke-width", "2");
+        line.setAttribute("fill", "none");
+        relationsSvg.appendChild(line);
+        state.relations.push({ from: state.entities[0].name, to: state.entities[1].name });
+        setStatus("relationship created");
+      });
+
+      btnSave.addEventListener("click", () => setStatus("model saved (mock)"));
+    })();
+  </script>
+</body>
+</html>

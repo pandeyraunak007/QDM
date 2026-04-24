@@ -1,0 +1,71 @@
+{
+  "flow_name": "Local Mock — Create ER Model",
+  "base_url": "fixtures/mock-modeler.html",
+  "steps": [
+    {
+      "action": "wait",
+      "selector": "#new-model",
+      "label": "Wait for Quest Data Modeler shell"
+    },
+    {
+      "action": "click",
+      "selector": "#new-model",
+      "label": "Click New Model"
+    },
+    {
+      "action": "waitForCanvas",
+      "selector": "#model-canvas",
+      "label": "Wait for modeling canvas to render"
+    },
+    {
+      "action": "click",
+      "selector": "#add-entity",
+      "label": "Open the Add Entity dialog"
+    },
+    {
+      "action": "type",
+      "selector": "#entity-name",
+      "value": "Customer",
+      "label": "Name the entity as Customer"
+    },
+    {
+      "action": "press",
+      "selector": "#entity-name",
+      "value": "Enter",
+      "label": "Confirm the Customer entity"
+    },
+    {
+      "action": "click",
+      "selector": "#add-entity",
+      "label": "Add a second entity"
+    },
+    {
+      "action": "type",
+      "selector": "#entity-name",
+      "value": "Orders",
+      "label": "Name the entity as Orders"
+    },
+    {
+      "action": "press",
+      "selector": "#entity-name",
+      "value": "Enter",
+      "label": "Confirm the Orders entity"
+    },
+    {
+      "action": "click",
+      "selector": "#add-relationship",
+      "label": "Create relationship Customer → Orders"
+    },
+    {
+      "action": "waitForCanvas",
+      "selector": "#model-canvas",
+      "label": "Render the updated ER diagram",
+      "delayMs": 1000
+    },
+    {
+      "action": "click",
+      "selector": "#save-model",
+      "label": "Save the model"
+    }
+  ]
+}

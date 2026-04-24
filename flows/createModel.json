@@ -1,0 +1,37 @@
+{
+  "flow_name": "Create ER Model",
+  "base_url": "https://app.questdatamodeler.example.com",
+  "steps": [
+    {
+      "action": "wait",
+      "selector": "body",
+      "label": "Wait for application shell"
+    },
+    {
+      "action": "click",
+      "selector": "#new-model",
+      "label": "Click on New Model"
+    },
+    {
+      "action": "waitForCanvas",
+      "selector": "#model-canvas",
+      "label": "Wait for modeling canvas to load"
+    },
+    {
+      "action": "click",
+      "selector": "#add-entity",
+      "label": "Add a new entity"
+    },
+    {
+      "action": "type",
+      "selector": "#entity-name",
+      "value": "Customer",
+      "label": "Name the entity as Customer"
+    },
+    {
+      "action": "press",
+      "value": "Enter",
+      "label": "Confirm the entity name"
+    }
+  ]
+}
