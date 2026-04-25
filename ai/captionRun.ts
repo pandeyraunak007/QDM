@@ -16,6 +16,7 @@ export interface ManifestStep {
   action: string;
   selector?: string;
   value?: string;
+  narration?: string;
   screenshot?: string;
   ok?: boolean;
   title?: string;
@@ -25,6 +26,8 @@ export interface ManifestStep {
 export interface Manifest {
   flow_name?: string;
   base_url?: string;
+  cover_narration?: string;
+  outro_narration?: string;
   generated_at?: string;
   total_steps?: number;
   executed_steps?: number;

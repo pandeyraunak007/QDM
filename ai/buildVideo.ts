@@ -31,6 +31,7 @@ interface CliFlags {
   engine?: string;
   voice?: string;
   coverNarration?: string;
+  outroNarration?: string;
 }
 
 async function main(): Promise<void> {
@@ -56,6 +57,7 @@ function parseArgs(argv: string[]): CliFlags {
     else if (a === "--engine") flags.engine = argv[++i];
     else if (a === "--voice") flags.voice = argv[++i];
     else if (a === "--cover-narration") flags.coverNarration = argv[++i];
+    else if (a === "--outro-narration") flags.outroNarration = argv[++i];
     else if (a === "--latest") flags.runArg = a;
     else if (!a.startsWith("--")) flags.runArg = a;
   }
@@ -73,6 +75,7 @@ function runPython(runDir: string, flags: CliFlags): Promise<void> {
     if (flags.engine) args.push("--engine", flags.engine);
     if (flags.voice) args.push("--voice", flags.voice);
     if (flags.coverNarration) args.push("--cover-narration", flags.coverNarration);
+    if (flags.outroNarration) args.push("--outro-narration", flags.outroNarration);
     const child = spawn("python3", args, { stdio: "inherit" });
     child.on("error", (err) => reject(err));
     child.on("exit", (code) => {

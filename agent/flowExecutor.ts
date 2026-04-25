@@ -9,6 +9,12 @@ import { ensureAuthenticated } from "./auth";
 export interface Flow {
   flow_name: string;
   base_url?: string;
+  /** Spoken on the cover slide of the rendered video. Falls back to a
+   *  default if omitted. */
+  cover_narration?: string;
+  /** Spoken on a final outro slide. If set, the video gets an extra
+   *  closing frame after the last step. */
+  outro_narration?: string;
   steps: FlowStep[];
 }
 
@@ -18,6 +24,7 @@ export interface StepResult {
   action: string;
   selector?: string;
   value?: string;
+  narration?: string;
   screenshot?: string;
   durationMs: number;
   ok: boolean;
@@ -129,6 +136,7 @@ export async function executeFlow(
         action: step.action,
         selector: step.selector,
         value: step.value,
+        narration: step.narration,
         screenshot,
         durationMs: Date.now() - started,
         ok: true,
@@ -143,6 +151,7 @@ export async function executeFlow(
         action: step.action,
         selector: step.selector,
         value: step.value,
+        narration: step.narration,
         screenshot: failShot,
         durationMs: Date.now() - started,
         ok: false,
@@ -156,6 +165,8 @@ export async function executeFlow(
   const manifest = {
     flow_name: flow.flow_name,
     base_url: flow.base_url,
+    cover_narration: flow.cover_narration,
+    outro_narration: flow.outro_narration,
     generated_at: new Date().toISOString(),
     total_steps: flow.steps.length,
     executed_steps: results.length,

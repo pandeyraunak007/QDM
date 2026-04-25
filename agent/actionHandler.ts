@@ -29,6 +29,10 @@ export interface FlowStep {
   toY?: number;
   /** For drag: how many intermediate mouse-move steps to interpolate. */
   steps?: number;
+  /** Optional override for the spoken narration on this step's video frame.
+   *  Empty string = stay silent during this step (frame still holds for
+   *  step_seconds). Omitted = fall back to the AI/label description. */
+  narration?: string;
 }
 
 const DEFAULT_TIMEOUT_MS = 15_000;

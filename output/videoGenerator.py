@@ -70,8 +70,12 @@ def main() -> None:
     parser.add_argument("--voice", default=None,
                         help="voice name. Defaults: 'Samantha' for say, 'en-US-AriaNeural' for edge. "
                              "List say voices with `say -v '?'`. List edge voices with `edge-tts --list-voices`.")
-    parser.add_argument("--cover-narration", default="Quest Data Modeler. An automated demo walkthrough.",
-                        help="text spoken on the cover slide when --narrate is set")
+    parser.add_argument("--cover-narration", default=None,
+                        help="text spoken on the cover slide. If omitted, uses the manifest's "
+                             "cover_narration if present, otherwise a generic default.")
+    parser.add_argument("--outro-narration", default=None,
+                        help="text spoken on a final outro slide. If omitted, uses the manifest's "
+                             "outro_narration if present, otherwise no outro slide is added.")
     args = parser.parse_args()
 
     run_dir = args.run_dir.resolve()
@@ -85,12 +89,20 @@ def main() -> None:
     if not steps:
         sys.exit("error: manifest has no steps")
 
+    cover_narration = (
+        args.cover_narration
+        or manifest.get("cover_narration")
+        or "Quest Data Modeler. An automated demo walkthrough."
+    )
+    outro_narration = args.outro_narration or manifest.get("outro_narration")
+
     frames_dir = run_dir / "video_frames"
     if frames_dir.exists():
         shutil.rmtree(frames_dir)
     frames_dir.mkdir(parents=True)
 
-    print(f"composing {len(steps) + 1} frames…")
+    expected_frames = len(steps) + 1 + (1 if outro_narration else 0)
+    print(f"composing {expected_frames} frames…")
 
     cover_path = frames_dir / "00_cover.png"
     compose_cover(flow_name, generated_at, len(steps), cover_path)
@@ -104,7 +116,16 @@ def main() -> None:
         screenshot_path = resolve_screenshot(run_dir, screenshot)
         out = frames_dir / f"{idx:02d}_step.png"
         compose_step_frame(idx, title, description, screenshot_path, out)
-        step_pngs.append((idx, out, description or title))
+        # Narration override beats the on-slide description. Empty string is
+        # respected (= silence on this frame), only `None` falls back.
+        narration = step.get("narration")
+        narration_text = narration if narration is not None else (description or title)
+        step_pngs.append((idx, out, narration_text))
+
+    outro_path: Path | None = None
+    if outro_narration:
+        outro_path = frames_dir / "99_outro.png"
+        compose_outro(outro_path)
 
     ffmpeg = locate_ffmpeg()
     out_mp4 = run_dir / "demo.mp4"
@@ -124,15 +145,22 @@ def main() -> None:
         print(f"narrating with engine={args.engine} voice={voice}…")
 
         cover_audio = audio_dir / "00_cover.wav"
-        synth(args.cover_narration, cover_audio)
+        synth_or_silence(synth, cover_narration, cover_audio, ffmpeg, fallback_silence_seconds=args.cover_seconds)
         cover_dur = max(wav_duration(cover_audio) + 0.5, args.cover_seconds)
 
         step_audio_specs: list[tuple[Path, float]] = []  # (audio_path, frame_dur)
         for idx, _, narration_text in step_pngs:
             out_wav = audio_dir / f"{idx:02d}_step.wav"
-            synth(narration_text, out_wav)
+            synth_or_silence(synth, narration_text, out_wav, ffmpeg, fallback_silence_seconds=args.step_seconds)
             dur = max(wav_duration(out_wav) + 0.5, args.step_seconds)
             step_audio_specs.append((out_wav, dur))
+
+        outro_audio: Path | None = None
+        outro_dur: float = 0.0
+        if outro_narration and outro_path is not None:
+            outro_audio = audio_dir / "99_outro.wav"
+            synth_or_silence(synth, outro_narration, outro_audio, ffmpeg, fallback_silence_seconds=args.cover_seconds)
+            outro_dur = max(wav_duration(outro_audio) + 0.5, args.cover_seconds)
 
         # Pad audio clips so each one's duration matches the frame's duration
         # exactly. Concat demuxer then plays them back-to-back, perfectly
@@ -144,18 +172,32 @@ def main() -> None:
             padded = padded_dir / f"{idx:02d}_step.wav"
             pad_audio(audio_path, frame_dur, padded, ffmpeg)
             padded_step_audios.append(padded)
+        outro_padded: Path | None = None
+        if outro_audio is not None:
+            outro_padded = padded_dir / "99_outro.wav"
+            pad_audio(outro_audio, outro_dur, outro_padded, ffmpeg)
 
         frame_durations = [cover_dur] + [d for _, d in step_audio_specs]
+        if outro_dur:
+            frame_durations.append(outro_dur)
+
+        video_entries: list[tuple[Path, float]] = [
+            (cover_path, cover_dur),
+            *((png, dur) for (_, png, _), dur in zip(step_pngs, [d for _, d in step_audio_specs])),
+        ]
+        if outro_path is not None and outro_dur:
+            video_entries.append((outro_path, outro_dur))
         video_concat = frames_dir / "concat.txt"
-        write_concat(
-            video_concat,
-            [(cover_path, cover_dur), *((png, dur) for (_, png, _), dur in zip(step_pngs, [d for _, d in step_audio_specs]))],
-        )
+        write_concat(video_concat, video_entries)
+
+        audio_files: list[Path] = [cover_padded, *padded_step_audios]
+        if outro_padded is not None:
+            audio_files.append(outro_padded)
         audio_concat = audio_dir / "concat.txt"
-        write_simple_concat(audio_concat, [cover_padded, *padded_step_audios])
+        write_simple_concat(audio_concat, audio_files)
 
         total = sum(frame_durations)
-        print(f"encoding {len(step_pngs) + 1} frames + narration ({total:.1f}s) with ffmpeg: {ffmpeg}")
+        print(f"encoding {len(video_entries)} frames + narration ({total:.1f}s) with ffmpeg: {ffmpeg}")
 
         cmd = [
             ffmpeg, "-y",
@@ -170,11 +212,14 @@ def main() -> None:
         ]
     else:
         video_concat = frames_dir / "concat.txt"
-        write_concat(
-            video_concat,
-            [(cover_path, args.cover_seconds), *((png, args.step_seconds) for _, png, _ in step_pngs)],
-        )
-        print(f"encoding {len(step_pngs) + 1} frames with ffmpeg: {ffmpeg}")
+        entries: list[tuple[Path, float]] = [
+            (cover_path, args.cover_seconds),
+            *((png, args.step_seconds) for _, png, _ in step_pngs),
+        ]
+        if outro_path is not None:
+            entries.append((outro_path, args.cover_seconds))
+        write_concat(video_concat, entries)
+        print(f"encoding {len(entries)} frames with ffmpeg: {ffmpeg}")
 
         cmd = [
             ffmpeg, "-y",
@@ -228,6 +273,18 @@ def compose_cover(flow_name: str, generated_at: str, step_count: int, out_path: 
     pretty = format_timestamp(generated_at)
     draw.text((100, 640), f"{step_count} steps · generated {pretty}", fill=(150, 165, 190), font=small_font)
 
+    canvas.save(out_path)
+
+
+def compose_outro(out_path: Path) -> None:
+    canvas = Image.new("RGB", (WIDTH, HEIGHT), COVER_TINT)
+    draw = ImageDraw.Draw(canvas)
+    sub_font = load_font(40)
+    title_font = load_font(80)
+    small_font = load_font(28)
+    draw.text((100, 380), "Demo Complete", fill=ACCENT, font=sub_font)
+    draw.text((100, 440), "Thanks for watching", fill=TITLE_FG, font=title_font)
+    draw.text((100, 600), "See you in the next demo.", fill=DESC_FG, font=small_font)
     canvas.save(out_path)
 
 
@@ -373,6 +430,33 @@ def wav_duration(path: Path) -> float:
     import wave
     with wave.open(str(path), "rb") as w:
         return w.getnframes() / float(w.getframerate())
+
+
+def synth_or_silence(
+    synth, text: str, out_path: Path, ffmpeg: str, *, fallback_silence_seconds: float
+) -> None:
+    """Synthesize narration. If the text is empty, write a silent WAV instead
+    of speaking a placeholder — empty narration is the user's signal that
+    this frame should be a silent transition."""
+    if text and text.strip():
+        synth(text, out_path)
+        return
+    write_silence(out_path, max(0.5, fallback_silence_seconds * 0.5), ffmpeg)
+
+
+def write_silence(out_path: Path, seconds: float, ffmpeg: str) -> None:
+    cmd = [
+        ffmpeg, "-y",
+        "-f", "lavfi",
+        "-i", f"anullsrc=r=22050:cl=mono",
+        "-t", f"{seconds:.3f}",
+        "-c:a", "pcm_s16le",
+        str(out_path),
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        sys.stderr.write(proc.stderr)
+        sys.exit("failed to generate silence")
 
 
 def pad_audio(input_wav: Path, target_seconds: float, output_wav: Path, ffmpeg: str) -> None:

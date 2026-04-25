@@ -1,149 +1,176 @@
 {
   "flow_name": "Real QDM — Create Logical Model",
   "base_url": "http://questpmdmc.myerwin.com/overview",
+  "cover_narration": "Welcome back... In this walkthrough, we'll create a logical data model from scratch using Quest Data Modeler... Let's get started.",
+  "outro_narration": "And that's it... You've successfully created a logical data model with entities and relationships... Thanks for watching... and see you in the next demo.",
   "steps": [
     {
       "action": "wait",
       "selector": "text=Welcome back",
       "label": "Wait for the Overview page",
+      "narration": "We begin on the Overview page...",
       "timeoutMs": 60000
     },
     {
       "action": "wait",
       "selector": "text=Quick Actions",
       "label": "Locate the Quick Actions row",
+      "narration": "And look for the Quick Actions section...",
       "timeoutMs": 30000
     },
     {
       "action": "click",
       "selector": "p:text-is(\"New Model\")",
-      "label": "Open the New Model dialog"
+      "label": "Open the New Model dialog",
+      "narration": "From here, click on New Model to begin."
     },
     {
       "action": "wait",
       "selector": "input[placeholder=\"Model Name\"]",
       "label": "Wait for the New Model dialog",
+      "narration": "Once the dialog appears...",
       "timeoutMs": 15000
     },
     {
       "action": "type",
       "selector": "input[placeholder=\"Model Name\"]",
       "value": "Demo_Sales_{{timestamp}}",
-      "label": "Name the model with a fresh timestamp"
+      "label": "Name the model with a fresh timestamp",
+      "narration": "Enter a name for your model... We'll use a timestamped name to keep things unique..."
     },
     {
       "action": "click",
       "selector": "label:has-text(\"Logical\"):not(:has-text(\"/\"))",
-      "label": "Select Logical model type"
+      "label": "Select Logical model type",
+      "narration": "Next... select Logical Model as the model type..."
     },
     {
       "action": "click",
       "selector": "button:has-text(\"Create\")",
-      "label": "Click Create to open the modeling canvas"
+      "label": "Click Create to open the modeling canvas",
+      "narration": "And click Create."
     },
     {
       "action": "wait",
       "delayMs": 12000,
-      "label": "Wait for the diagram editor to load"
+      "label": "Wait for the diagram editor to load",
+      "narration": "Give it a moment... as the modeling canvas loads..."
     },
     {
       "action": "click",
       "selector": "[aria-label=\"Add Entity\"]",
-      "label": "Activate the Add Entity tool"
+      "label": "Activate the Add Entity tool",
+      "narration": "Now, let's start building our model. Click on the Add Entity tool..."
     },
     {
       "action": "wait",
       "delayMs": 800,
-      "label": "Tool ready — cursor in entity-placement mode"
+      "label": "Tool ready — cursor in entity-placement mode",
+      "narration": ""
     },
     {
       "action": "clickAt",
       "selector": "body",
       "x": 700,
       "y": 400,
-      "label": "Place the first entity on the canvas"
+      "label": "Place the first entity on the canvas",
+      "narration": "And place your first entity anywhere on the canvas."
     },
     {
       "action": "wait",
       "selector": "input#table-name",
       "label": "Wait for the New Entity dialog",
+      "narration": "In the dialog that appears...",
       "timeoutMs": 10000
     },
     {
       "action": "type",
       "selector": "input#table-name",
       "value": "Customer",
-      "label": "Name the entity Customer"
+      "label": "Name the entity Customer",
+      "narration": "Enter the name Customer..."
     },
     {
       "action": "press",
       "selector": "input#table-name",
       "value": "Tab",
-      "label": "Commit the entity name (blur)"
+      "label": "Commit the entity name (blur)",
+      "narration": "Then press Tab..."
     },
     {
       "action": "clickAt",
       "selector": "body",
       "x": 200,
       "y": 750,
-      "label": "Click outside the dialog to close it"
+      "label": "Click outside the dialog to close it",
+      "narration": "And click outside to confirm."
     },
     {
       "action": "wait",
       "delayMs": 1500,
-      "label": "Wait for canvas to update"
+      "label": "Wait for canvas to update",
+      "narration": "Great... the first entity is now created."
     },
     {
       "action": "click",
       "selector": "[aria-label=\"Add Entity\"]",
-      "label": "Activate Add Entity tool again"
+      "label": "Activate Add Entity tool again",
+      "narration": "Let's add another one. Activate the Add Entity tool again..."
     },
     {
       "action": "clickAt",
       "selector": "body",
       "x": 1050,
       "y": 400,
-      "label": "Place the second entity on the canvas"
+      "label": "Place the second entity on the canvas",
+      "narration": "And place a second entity on the canvas."
     },
     {
       "action": "wait",
       "selector": "input#table-name",
       "label": "Wait for the second New Entity dialog",
+      "narration": "",
       "timeoutMs": 10000
     },
     {
       "action": "type",
       "selector": "input#table-name",
       "value": "Orders",
-      "label": "Name the entity Orders"
+      "label": "Name the entity Orders",
+      "narration": "This time... name it Orders..."
     },
     {
       "action": "press",
       "selector": "input#table-name",
       "value": "Tab",
-      "label": "Commit the second entity name"
+      "label": "Commit the second entity name",
+      "narration": "Press Tab to confirm..."
     },
     {
       "action": "clickAt",
       "selector": "body",
       "x": 200,
       "y": 750,
-      "label": "Click outside to close the second dialog"
+      "label": "Click outside to close the second dialog",
+      "narration": "And click outside to close the dialog."
     },
     {
       "action": "wait",
       "delayMs": 1500,
-      "label": "Two entities placed on the canvas"
+      "label": "Two entities placed on the canvas",
+      "narration": "Now we have two entities in our model... Customer... and Orders..."
     },
     {
       "action": "click",
       "selector": "[aria-label=\"Add Relationships\"]",
-      "label": "Activate the Add Relationships tool"
+      "label": "Activate the Add Relationships tool",
+      "narration": "Next, let's define the relationship between them. Select the Add Relationships tool..."
     },
     {
       "action": "wait",
       "delayMs": 600,
-      "label": "Relationship tool ready"
+      "label": "Relationship tool ready",
+      "narration": ""
     },
     {
       "action": "drag",
@@ -153,38 +180,45 @@
       "toX": 1050,
       "toY": 390,
       "steps": 18,
-      "label": "Drag from Customer to Orders to draw a relationship"
+      "label": "Drag from Customer to Orders to draw a relationship",
+      "narration": "And drag from Customer to Orders."
     },
     {
       "action": "wait",
       "delayMs": 2000,
-      "label": "Wait for the relationship line to render"
+      "label": "Wait for the relationship line to render",
+      "narration": "Wait a moment... and you'll see the relationship line appear."
     },
     {
       "action": "click",
       "selector": "[aria-label=\"Select\"]",
-      "label": "Switch back to the Select tool"
+      "label": "Switch back to the Select tool",
+      "narration": "Once done... switch back to the Select tool."
     },
     {
       "action": "click",
       "selector": "[aria-label=\"Mart\"]",
-      "label": "Open the Mart save menu"
+      "label": "Open the Mart save menu",
+      "narration": "Finally... let's save our model. Click on the Mart menu..."
     },
     {
       "action": "wait",
       "selector": "text=Save as",
       "label": "Wait for the Mart menu to render",
+      "narration": "Wait for the options to load...",
       "timeoutMs": 8000
     },
     {
       "action": "click",
       "selector": "li:has-text(\"Save as\")",
-      "label": "Choose Save as"
+      "label": "Choose Save as",
+      "narration": "And choose Save As."
     },
     {
       "action": "wait",
       "delayMs": 3000,
-      "label": "Wait for the Save as dialog"
+      "label": "Wait for the Save as dialog",
+      "narration": "The save dialog will appear... and your model is now ready to be stored."
     }
   ]
 }
