@@ -9,10 +9,14 @@
  *
  *   QDM_URL=http://... QDM_USER=... QDM_PASS=... npx ts-node scripts/recon.ts
  */
-import { chromium, Page } from "playwright";
+import { chromium, Page, BrowserContext } from "playwright";
 import * as fs from "fs/promises";
+import { existsSync } from "fs";
 import * as path from "path";
 import { logger } from "../utils/logger";
+import { stubBrokenRuntimeConfig } from "../utils/routes";
+
+const DEFAULT_PROFILE_DIR = ".qdm-profile";
 
 interface ElementInfo {
   tag: string;
@@ -47,23 +51,30 @@ async function main(): Promise<void> {
   logger.info(`output: ${outDir}`);
 
   const headless = process.env.QDM_HEADFUL ? false : true;
-  const browser = await chromium.launch({ headless });
-  const ctx = await browser.newContext({
-    viewport: { width: 1440, height: 900 },
-    ignoreHTTPSErrors: true,
-  });
-  const page = await ctx.newPage();
+  const profileDir = process.env.QDM_PROFILE
+    ? path.resolve(process.env.QDM_PROFILE)
+    : existsSync(DEFAULT_PROFILE_DIR)
+      ? path.resolve(DEFAULT_PROFILE_DIR)
+      : undefined;
 
-  // Workaround: this Quest instance's nginx returns index.html (HTML, 200)
-  // for /runtime-config.js instead of 404, which causes a JS parse error and
-  // prevents the SPA from bootstrapping. Stub the file with empty JS.
-  await page.route("**/runtime-config.js", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/javascript",
-      body: "/* stubbed by demo-agent recon */",
-    }),
-  );
+  let ctx: BrowserContext;
+  let browserHandle: import("playwright").Browser | undefined;
+  if (profileDir) {
+    logger.info(`using persistent profile: ${profileDir}`);
+    ctx = await chromium.launchPersistentContext(profileDir, {
+      headless,
+      viewport: { width: 1440, height: 900 },
+      ignoreHTTPSErrors: true,
+    });
+  } else {
+    browserHandle = await chromium.launch({ headless });
+    ctx = await browserHandle.newContext({
+      viewport: { width: 1440, height: 900 },
+      ignoreHTTPSErrors: true,
+    });
+  }
+  await stubBrokenRuntimeConfig(ctx);
+  const page = ctx.pages()[0] ?? (await ctx.newPage());
   page.on("pageerror", (e) => logger.warn(`pageerror: ${e.message}\n${e.stack ?? ""}`));
   page.on("console", (msg) => {
     if (msg.type() === "error" || msg.type() === "warning") {
@@ -99,13 +110,47 @@ async function main(): Promise<void> {
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
     await page.waitForLoadState("networkidle", { timeout: 20_000 }).catch(() => undefined);
-    await page.waitForTimeout(3000);
+
+    // Take an early snapshot, then wait longer for SSO/silent auth flows.
+    await page.screenshot({ path: path.join(outDir, "00_initial.png"), fullPage: true });
+
+    const totalWaitMs = parseInt(process.env.QDM_WAIT_MS || "20000", 10);
+    const pollMs = 2000;
+    let elapsed = 0;
+    let renderedAt = 0;
+    while (elapsed < totalWaitMs) {
+      await page.waitForTimeout(pollMs);
+      elapsed += pollMs;
+      const rootChildren = await page
+        .evaluate(() => document.getElementById("root")?.children.length ?? 0)
+        .catch(() => 0);
+      if (rootChildren > 0 && !renderedAt) {
+        renderedAt = elapsed;
+        logger.info(`#root populated after ~${renderedAt}ms`);
+      }
+    }
+
     await page.screenshot({ path: path.join(outDir, "01_landing.png"), fullPage: true });
     const landing = await dumpPage(page);
     await writeJson(path.join(outDir, "01_landing.json"), landing);
     logger.info(`landing: ${landing.title} — ${landing.url}`);
-    const bodyHtml = (await page.locator("body").innerHTML().catch(() => "")).slice(0, 4000);
+    const bodyHtml = (await page.locator("body").innerHTML().catch(() => "")).slice(0, 8000);
     await fs.writeFile(path.join(outDir, "01_body.html"), bodyHtml, "utf-8");
+
+    // Dump auth artifacts so we can verify the saved session is in scope.
+    const cookies = await ctx.cookies(url).catch(() => []);
+    await writeJson(path.join(outDir, "cookies.json"), cookies);
+    const storage = await page
+      .evaluate(() => {
+        const ls: Record<string, string> = {};
+        const ss: Record<string, string> = {};
+        try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i)!; ls[k] = (localStorage.getItem(k) ?? "").slice(0, 400); } } catch {}
+        try { for (let i = 0; i < sessionStorage.length; i++) { const k = sessionStorage.key(i)!; ss[k] = (sessionStorage.getItem(k) ?? "").slice(0, 400); } } catch {}
+        return { localStorage: ls, sessionStorage: ss };
+      })
+      .catch(() => ({ localStorage: {}, sessionStorage: {} }));
+    await writeJson(path.join(outDir, "storage.json"), storage);
+    logger.info(`cookies: ${cookies.length}, localStorage keys: ${Object.keys(storage.localStorage).length}`);
 
     const hasPasswordField = (await page.locator('input[type="password"]').count()) > 0;
 
@@ -150,7 +195,7 @@ async function main(): Promise<void> {
     logger.info(`done: ${outDir}`);
   } finally {
     await ctx.close().catch(() => undefined);
-    await browser.close().catch(() => undefined);
+    if (browserHandle) await browserHandle.close().catch(() => undefined);
   }
 }
 
