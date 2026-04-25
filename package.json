@@ -8,9 +8,11 @@
     "demo": "ts-node agent/runner.ts",
     "bootstrap": "ts-node scripts/bootstrap.ts",
     "recon": "ts-node scripts/recon.ts",
+    "pptx": "ts-node ai/buildDeck.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.1",
     "commander": "^12.1.0",
     "playwright": "^1.47.0"
   },

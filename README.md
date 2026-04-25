@@ -226,11 +226,40 @@ this into the AI description generator and the PPT builder.
 
 ---
 
+## Phase 2 — generate a PowerPoint deck from a run
+
+After a flow finishes, turn the run's screenshots + manifest into
+`demo.pptx` (cover slide + one slide per step with title, description,
+and screenshot).
+
+**One-time setup**
+
+```bash
+pip install -r output/requirements.txt
+# optional, for LLM-written captions:
+export ANTHROPIC_API_KEY=sk-ant-...
+```
+
+**Build a deck**
+
+```bash
+npm run pptx                          # picks the most recent output/<run>
+npm run pptx -- output/<run-dir>      # explicit run directory
+```
+
+The orchestrator (`ai/buildDeck.ts`):
+
+1. Reads `<run>/steps.json`.
+2. Calls Claude (`claude-haiku-4-5`) once with all step labels and gets
+   back `{title, description}` per step. With no `ANTHROPIC_API_KEY`, it
+   falls back to label-based captions (still produces a usable deck).
+3. Writes `<run>/steps_described.json`.
+4. Spawns `output/pptGenerator.py` (python-pptx) which writes
+   `<run>/demo.pptx` — 13.33" × 7.5" widescreen, cover + one slide per
+   step, screenshot scaled with preserved aspect ratio.
+
 ## Roadmap
 
-- **Phase 2** — `ai/descriptionGenerator.ts` (Claude/OpenAI) produces slide
-  titles + beginner-friendly descriptions from each step's `label`, then
-  `output/pptGenerator.py` (python-pptx) builds `demo.pptx` from the manifest.
 - **Phase 3** — smarter canvas-render detection (DOM-diff / pixel-diff),
   before/after screenshots for diagram changes, zoom-into-entity, modal/popup
   handling helpers, optional FFmpeg video + narration, reusable model templates.
