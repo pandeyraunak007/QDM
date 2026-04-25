@@ -48,6 +48,15 @@ export async function ensureAuthenticated(page: Page, opts: EnsureAuthOptions = 
     throw new Error("auth: redirected to a real Microsoft login domain — cannot auto-fill safely");
   }
 
+  // Wait for the IdP's password field to appear before attempting to fill —
+  // some IdP pages take a few seconds after navigation to render the form.
+  await page
+    .locator('input[type="password"]')
+    .first()
+    .waitFor({ state: "visible", timeout: 20_000 })
+    .catch(() => undefined);
+  await page.waitForTimeout(800);
+
   await fillCredentials(page, user, pass);
 
   // Wait for the OAuth callback to be exchanged and for the SPA to reach a
