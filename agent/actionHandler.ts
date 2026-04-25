@@ -1,4 +1,5 @@
 import { Page } from "playwright";
+import * as path from "path";
 import { logger } from "../utils/logger";
 
 export type ActionKind =
@@ -8,6 +9,7 @@ export type ActionKind =
   | "drag"
   | "type"
   | "press"
+  | "setFile"
   | "wait"
   | "waitForCanvas"
   | "screenshot";
@@ -96,6 +98,15 @@ export async function executeAction(page: Page, step: FlowStep): Promise<void> {
       const loc = page.locator(step.selector).first();
       await loc.waitFor({ state: "visible", timeout });
       await loc.fill(step.value);
+      return;
+    }
+
+    case "setFile": {
+      if (!step.selector) throw new Error(`setFile requires 'selector' (step: ${step.label})`);
+      if (!step.value) throw new Error(`setFile requires 'value' (file path) (step: ${step.label})`);
+      const file = path.isAbsolute(step.value) ? step.value : path.resolve(step.value);
+      // setInputFiles works on hidden file inputs too; no need to click Browse.
+      await page.locator(step.selector).first().setInputFiles(file, { timeout });
       return;
     }
 
