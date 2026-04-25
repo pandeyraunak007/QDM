@@ -258,11 +258,33 @@ The orchestrator (`ai/buildDeck.ts`):
    `<run>/demo.pptx` — 13.33" × 7.5" widescreen, cover + one slide per
    step, screenshot scaled with preserved aspect ratio.
 
+## Phase 3 — render the run as an MP4
+
+Same inputs as the deck, different output: a captioned 1920×1080 H.264 MP4.
+
+```bash
+npm run video                                # latest run, default timing
+npm run video -- output/<run-dir>            # explicit run directory
+npm run video -- --step-seconds 5            # hold each step longer
+npm run video -- --cover-seconds 4 --fps 60
+```
+
+Each frame is composed in Pillow (cover slide + one frame per step with a
+caption strip and the screenshot scaled to fit), then assembled by FFmpeg
+into `<run>/demo.mp4`. The captions reuse `steps_described.json` from
+Phase 2 if present, otherwise they're generated with the same logic.
+
+FFmpeg discovery order: system `ffmpeg` first, then the static binary
+shipped by `imageio-ffmpeg` (installed by `pip install -r
+output/requirements.txt`). The Playwright-bundled FFmpeg is intentionally
+not used — its build is stripped down (no x264 / mp4 / concat).
+
 ## Roadmap
 
-- **Phase 3** — smarter canvas-render detection (DOM-diff / pixel-diff),
+- **Phase 3 extras** — smarter canvas-render detection (DOM-diff / pixel-diff),
   before/after screenshots for diagram changes, zoom-into-entity, modal/popup
-  handling helpers, optional FFmpeg video + narration, reusable model templates.
+  handling helpers, voice narration, reusable model templates, sensitive-data
+  masking.
 
 ## Bonus ideas
 

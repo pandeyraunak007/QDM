@@ -2,6 +2,7 @@ node_modules/
 dist/
 output/*
 !output/pptGenerator.py
+!output/videoGenerator.py
 !output/requirements.txt
 .playwright/
 playwright-report/
