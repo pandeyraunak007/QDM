@@ -4,6 +4,8 @@ import { logger } from "../utils/logger";
 export type ActionKind =
   | "goto"
   | "click"
+  | "clickAt"
+  | "drag"
   | "type"
   | "press"
   | "wait"
@@ -18,6 +20,15 @@ export interface FlowStep {
   label: string;
   timeoutMs?: number;
   delayMs?: number;
+  /** For clickAt: pixel offsets relative to the located element's top-left.
+   *  For drag: source coordinates (relative to selector's bounding box). */
+  x?: number;
+  y?: number;
+  /** For drag: target coordinates (relative to selector's bounding box). */
+  toX?: number;
+  toY?: number;
+  /** For drag: how many intermediate mouse-move steps to interpolate. */
+  steps?: number;
 }
 
 const DEFAULT_TIMEOUT_MS = 15_000;
@@ -39,6 +50,38 @@ export async function executeAction(page: Page, step: FlowStep): Promise<void> {
       const loc = page.locator(step.selector).first();
       await loc.waitFor({ state: "visible", timeout });
       await loc.click({ timeout });
+      return;
+    }
+
+    case "clickAt": {
+      if (!step.selector) throw new Error(`clickAt requires 'selector' (step: ${step.label})`);
+      const loc = page.locator(step.selector).first();
+      await loc.waitFor({ state: "visible", timeout });
+      const box = await loc.boundingBox();
+      if (!box) throw new Error(`clickAt: bounding box unavailable (step: ${step.label})`);
+      const x = step.x !== undefined ? step.x : box.width / 2;
+      const y = step.y !== undefined ? step.y : box.height / 2;
+      await page.mouse.click(box.x + x, box.y + y);
+      return;
+    }
+
+    case "drag": {
+      if (!step.selector) throw new Error(`drag requires 'selector' (step: ${step.label})`);
+      if (step.x === undefined || step.y === undefined || step.toX === undefined || step.toY === undefined) {
+        throw new Error(`drag requires x/y and toX/toY (step: ${step.label})`);
+      }
+      const loc = page.locator(step.selector).first();
+      await loc.waitFor({ state: "visible", timeout });
+      const box = await loc.boundingBox();
+      if (!box) throw new Error(`drag: bounding box unavailable (step: ${step.label})`);
+      const startX = box.x + step.x;
+      const startY = box.y + step.y;
+      const endX = box.x + step.toX;
+      const endY = box.y + step.toY;
+      await page.mouse.move(startX, startY);
+      await page.mouse.down();
+      await page.mouse.move(endX, endY, { steps: step.steps ?? 12 });
+      await page.mouse.up();
       return;
     }
 

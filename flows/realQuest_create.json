@@ -1,0 +1,190 @@
+{
+  "flow_name": "Real QDM — Create Logical Model",
+  "base_url": "http://questpmdmc.myerwin.com/overview",
+  "steps": [
+    {
+      "action": "wait",
+      "selector": "text=Welcome back",
+      "label": "Wait for the Overview page",
+      "timeoutMs": 60000
+    },
+    {
+      "action": "wait",
+      "selector": "text=Quick Actions",
+      "label": "Locate the Quick Actions row",
+      "timeoutMs": 30000
+    },
+    {
+      "action": "click",
+      "selector": "p:text-is(\"New Model\")",
+      "label": "Open the New Model dialog"
+    },
+    {
+      "action": "wait",
+      "selector": "input[placeholder=\"Model Name\"]",
+      "label": "Wait for the New Model dialog",
+      "timeoutMs": 15000
+    },
+    {
+      "action": "type",
+      "selector": "input[placeholder=\"Model Name\"]",
+      "value": "Demo_Sales_{{timestamp}}",
+      "label": "Name the model with a fresh timestamp"
+    },
+    {
+      "action": "click",
+      "selector": "label:has-text(\"Logical\"):not(:has-text(\"/\"))",
+      "label": "Select Logical model type"
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Create\")",
+      "label": "Click Create to open the modeling canvas"
+    },
+    {
+      "action": "wait",
+      "delayMs": 12000,
+      "label": "Wait for the diagram editor to load"
+    },
+    {
+      "action": "click",
+      "selector": "[aria-label=\"Add Entity\"]",
+      "label": "Activate the Add Entity tool"
+    },
+    {
+      "action": "wait",
+      "delayMs": 800,
+      "label": "Tool ready — cursor in entity-placement mode"
+    },
+    {
+      "action": "clickAt",
+      "selector": "body",
+      "x": 700,
+      "y": 400,
+      "label": "Place the first entity on the canvas"
+    },
+    {
+      "action": "wait",
+      "selector": "input#table-name",
+      "label": "Wait for the New Entity dialog",
+      "timeoutMs": 10000
+    },
+    {
+      "action": "type",
+      "selector": "input#table-name",
+      "value": "Customer",
+      "label": "Name the entity Customer"
+    },
+    {
+      "action": "press",
+      "selector": "input#table-name",
+      "value": "Tab",
+      "label": "Commit the entity name (blur)"
+    },
+    {
+      "action": "clickAt",
+      "selector": "body",
+      "x": 200,
+      "y": 750,
+      "label": "Click outside the dialog to close it"
+    },
+    {
+      "action": "wait",
+      "delayMs": 1500,
+      "label": "Wait for canvas to update"
+    },
+    {
+      "action": "click",
+      "selector": "[aria-label=\"Add Entity\"]",
+      "label": "Activate Add Entity tool again"
+    },
+    {
+      "action": "clickAt",
+      "selector": "body",
+      "x": 1050,
+      "y": 400,
+      "label": "Place the second entity on the canvas"
+    },
+    {
+      "action": "wait",
+      "selector": "input#table-name",
+      "label": "Wait for the second New Entity dialog",
+      "timeoutMs": 10000
+    },
+    {
+      "action": "type",
+      "selector": "input#table-name",
+      "value": "Orders",
+      "label": "Name the entity Orders"
+    },
+    {
+      "action": "press",
+      "selector": "input#table-name",
+      "value": "Tab",
+      "label": "Commit the second entity name"
+    },
+    {
+      "action": "clickAt",
+      "selector": "body",
+      "x": 200,
+      "y": 750,
+      "label": "Click outside to close the second dialog"
+    },
+    {
+      "action": "wait",
+      "delayMs": 1500,
+      "label": "Two entities placed on the canvas"
+    },
+    {
+      "action": "click",
+      "selector": "[aria-label=\"Add Relationships\"]",
+      "label": "Activate the Add Relationships tool"
+    },
+    {
+      "action": "wait",
+      "delayMs": 600,
+      "label": "Relationship tool ready"
+    },
+    {
+      "action": "drag",
+      "selector": "body",
+      "x": 700,
+      "y": 390,
+      "toX": 1050,
+      "toY": 390,
+      "steps": 18,
+      "label": "Drag from Customer to Orders to draw a relationship"
+    },
+    {
+      "action": "wait",
+      "delayMs": 2000,
+      "label": "Wait for the relationship line to render"
+    },
+    {
+      "action": "click",
+      "selector": "[aria-label=\"Select\"]",
+      "label": "Switch back to the Select tool"
+    },
+    {
+      "action": "click",
+      "selector": "[aria-label=\"Mart\"]",
+      "label": "Open the Mart save menu"
+    },
+    {
+      "action": "wait",
+      "selector": "text=Save as",
+      "label": "Wait for the Mart menu to render",
+      "timeoutMs": 8000
+    },
+    {
+      "action": "click",
+      "selector": "li:has-text(\"Save as\")",
+      "label": "Choose Save as"
+    },
+    {
+      "action": "wait",
+      "delayMs": 3000,
+      "label": "Wait for the Save as dialog"
+    }
+  ]
+}

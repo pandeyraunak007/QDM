@@ -4,6 +4,7 @@ import * as path from "path";
 import { executeAction, withRetry, FlowStep } from "./actionHandler";
 import { captureScreenshot } from "../capture/screenshot";
 import { logger } from "../utils/logger";
+import { ensureAuthenticated } from "./auth";
 
 export interface Flow {
   flow_name: string;
@@ -72,14 +73,39 @@ export async function executeFlow(
   if (flow.base_url) {
     logger.info(`goto base_url: ${flow.base_url}`);
     await page.goto(flow.base_url, { waitUntil: "domcontentloaded" });
+
+    // Self-heal an expired session: if the page lands on the login screen,
+    // run the credential flow before the first step. No-op when already
+    // authenticated, and skipped entirely for non-http(s) flows like the
+    // local mock fixture.
+    if (/^https?:/i.test(flow.base_url)) {
+      try {
+        const didLogin = await ensureAuthenticated(page);
+        if (didLogin) {
+          logger.info("authenticated session ready — proceeding with flow");
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.warn(`auth check skipped: ${msg}`);
+      }
+    }
   }
 
   const results: StepResult[] = [];
   let aborted = false;
 
+  const runStamp = compactStamp(new Date());
+  const runRandom = Math.random().toString(36).slice(2, 8);
+
   for (let i = 0; i < flow.steps.length; i++) {
     if (aborted) break;
-    const step = flow.steps[i];
+    const rawStep = flow.steps[i];
+    const step: FlowStep = {
+      ...rawStep,
+      value: expandTemplates(rawStep.value, runStamp, runRandom),
+      selector: expandTemplates(rawStep.selector, runStamp, runRandom),
+      url: expandTemplates(rawStep.url, runStamp, runRandom),
+    };
     const index = i + 1;
     const started = Date.now();
     logger.info(`→ [${index}/${flow.steps.length}] ${step.label}`);
@@ -161,6 +187,26 @@ async function safeCapture(
   } catch {
     return undefined;
   }
+}
+
+function expandTemplates(s: string | undefined, stamp: string, random: string): string | undefined {
+  if (s === undefined) return undefined;
+  return s
+    .replace(/\{\{timestamp\}\}/g, stamp)
+    .replace(/\{\{random\}\}/g, random);
+}
+
+function compactStamp(d: Date): string {
+  const pad = (n: number): string => String(n).padStart(2, "0");
+  return (
+    d.getUTCFullYear().toString() +
+    pad(d.getUTCMonth() + 1) +
+    pad(d.getUTCDate()) +
+    "_" +
+    pad(d.getUTCHours()) +
+    pad(d.getUTCMinutes()) +
+    pad(d.getUTCSeconds())
+  );
 }
 
 function sanitize(s: string): string {
