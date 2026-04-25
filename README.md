@@ -276,12 +276,39 @@ caption strip and the screenshot scaled to fit), then assembled by FFmpeg
 into `<run>/demo.mp4`. The captions reuse `steps_described.json` from
 Phase 2 if present, otherwise they're generated with the same logic.
 
-**Narration** (`--narrate`, macOS only). Uses the built-in `say` command
-to speak each step's description with the chosen voice (default
-`Samantha`). Per-frame durations grow to fit the audio + a 0.5s buffer
-(never shorter than the base `--step-seconds`), each clip is padded with
-silence to match its frame duration, and FFmpeg muxes video + audio in
-one pass to AAC. List voices with `say -v '?'`.
+**Narration** (`--narrate`). Per-frame durations grow to fit the spoken
+audio plus a 0.5s buffer (never shorter than the base `--step-seconds`);
+each clip is padded with silence to match its frame, and FFmpeg muxes
+video + audio in one pass to AAC.
+
+Two TTS engines are supported via `--engine`:
+
+| engine        | quality    | install                        | platform              |
+| ------------- | ---------- | ------------------------------ | --------------------- |
+| `say` (default) | decent      | built into macOS              | macOS only            |
+| `edge`        | **neural — much more natural** | `pip install -r output/requirements.txt` | macOS / Linux / Windows |
+
+Examples:
+
+```bash
+npm run video -- --narrate                                    # macOS say + Samantha
+npm run video -- --narrate --voice 'Ava (Premium)'            # macOS say + premium voice (must download in System Settings → Accessibility → Spoken Content → Manage Voices)
+npm run video -- --narrate --engine edge                      # Edge neural TTS, en-US-AriaNeural
+npm run video -- --narrate --engine edge --voice en-US-JennyNeural   # warmer voice
+```
+
+Common Edge neural voices that sound great for product walkthroughs:
+`en-US-AriaNeural` (default, balanced), `en-US-JennyNeural` (warm),
+`en-US-AshleyNeural` (clear narrator), `en-US-DavisNeural` (male, calm),
+`en-US-GuyNeural` (male, neutral). Full list: `python3 -m edge_tts --list-voices`.
+
+**The narration script itself** comes from `steps_described.json`. With
+`ANTHROPIC_API_KEY` set, Claude (haiku-4-5) writes natural one- or two-
+sentence descriptions designed to read well when spoken (no em-dashes,
+abbreviations, or fragments). Without a key, the agent uses each step's
+label verbatim as its narration — also clean to listen to, just less
+contextual. To regenerate captions after changing the prompt or adding
+a key, delete `steps_described.json` from the run dir before running.
 
 FFmpeg discovery order: system `ffmpeg` first, then the static binary
 shipped by `imageio-ffmpeg` (installed by `pip install -r

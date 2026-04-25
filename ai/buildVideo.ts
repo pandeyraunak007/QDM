@@ -28,6 +28,7 @@ interface CliFlags {
   stepSeconds?: string;
   fps?: string;
   narrate?: boolean;
+  engine?: string;
   voice?: string;
   coverNarration?: string;
 }
@@ -52,6 +53,7 @@ function parseArgs(argv: string[]): CliFlags {
     else if (a === "--step-seconds") flags.stepSeconds = argv[++i];
     else if (a === "--fps") flags.fps = argv[++i];
     else if (a === "--narrate") flags.narrate = true;
+    else if (a === "--engine") flags.engine = argv[++i];
     else if (a === "--voice") flags.voice = argv[++i];
     else if (a === "--cover-narration") flags.coverNarration = argv[++i];
     else if (a === "--latest") flags.runArg = a;
@@ -68,6 +70,7 @@ function runPython(runDir: string, flags: CliFlags): Promise<void> {
     if (flags.stepSeconds) args.push("--step-seconds", flags.stepSeconds);
     if (flags.fps) args.push("--fps", flags.fps);
     if (flags.narrate) args.push("--narrate");
+    if (flags.engine) args.push("--engine", flags.engine);
     if (flags.voice) args.push("--voice", flags.voice);
     if (flags.coverNarration) args.push("--cover-narration", flags.coverNarration);
     const child = spawn("python3", args, { stdio: "inherit" });

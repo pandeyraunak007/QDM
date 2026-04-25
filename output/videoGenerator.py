@@ -64,9 +64,12 @@ def main() -> None:
                         help="minimum per-step duration (extended if narration is longer)")
     parser.add_argument("--fps", type=int, default=30)
     parser.add_argument("--narrate", action="store_true",
-                        help="synthesize voice-over per step (macOS `say`) and mux into the video")
-    parser.add_argument("--voice", default="Samantha",
-                        help="macOS `say` voice when --narrate is set (default: Samantha)")
+                        help="synthesize voice-over per step and mux into the video")
+    parser.add_argument("--engine", choices=["say", "edge"], default="say",
+                        help="TTS engine: 'say' (macOS, default) or 'edge' (Microsoft Edge neural voices, requires edge-tts)")
+    parser.add_argument("--voice", default=None,
+                        help="voice name. Defaults: 'Samantha' for say, 'en-US-AriaNeural' for edge. "
+                             "List say voices with `say -v '?'`. List edge voices with `edge-tts --list-voices`.")
     parser.add_argument("--cover-narration", default="Quest Data Modeler. An automated demo walkthrough.",
                         help="text spoken on the cover slide when --narrate is set")
     args = parser.parse_args()
@@ -107,7 +110,10 @@ def main() -> None:
     out_mp4 = run_dir / "demo.mp4"
 
     if args.narrate:
-        ensure_say_available()
+        ffmpeg_for_tts = ffmpeg
+        voice = args.voice or default_voice_for_engine(args.engine)
+        synth = build_synthesizer(args.engine, voice, ffmpeg_for_tts)
+
         audio_dir = run_dir / "audio_clips"
         if audio_dir.exists():
             shutil.rmtree(audio_dir)
@@ -115,16 +121,16 @@ def main() -> None:
         padded_dir = audio_dir / "padded"
         padded_dir.mkdir(parents=True)
 
-        print(f"narrating with macOS `say` (voice={args.voice})…")
+        print(f"narrating with engine={args.engine} voice={voice}…")
 
         cover_audio = audio_dir / "00_cover.wav"
-        synthesize(args.cover_narration, args.voice, cover_audio)
+        synth(args.cover_narration, cover_audio)
         cover_dur = max(wav_duration(cover_audio) + 0.5, args.cover_seconds)
 
         step_audio_specs: list[tuple[Path, float]] = []  # (audio_path, frame_dur)
         for idx, _, narration_text in step_pngs:
             out_wav = audio_dir / f"{idx:02d}_step.wav"
-            synthesize(narration_text, args.voice, out_wav)
+            synth(narration_text, out_wav)
             dur = max(wav_duration(out_wav) + 0.5, args.step_seconds)
             step_audio_specs.append((out_wav, dur))
 
@@ -280,30 +286,87 @@ def write_simple_concat(path: Path, files: list[Path]) -> None:
     path.write_text("\n".join(lines) + "\n")
 
 
+def default_voice_for_engine(engine: str) -> str:
+    if engine == "edge":
+        return "en-US-AriaNeural"
+    return "Samantha"
+
+
+def build_synthesizer(engine: str, voice: str, ffmpeg: str):
+    """Return a callable: (text, out_wav_path) -> None.
+
+    The returned function writes a 22kHz mono LE-int16 WAV that Python's
+    `wave` module can read for duration probing."""
+    if engine == "say":
+        ensure_say_available()
+        def _say(text: str, out_path: Path) -> None:
+            text = text.strip() or "(no narration)"
+            cmd = [
+                "say",
+                "-v", voice,
+                "--file-format=WAVE",
+                "--data-format=LEI16@22050",
+                "-o", str(out_path),
+                text,
+            ]
+            proc = subprocess.run(cmd, capture_output=True, text=True)
+            if proc.returncode != 0:
+                sys.stderr.write(proc.stderr)
+                sys.exit(f"`say` failed (exit {proc.returncode}) for text: {text[:80]!r}")
+        return _say
+
+    if engine == "edge":
+        ensure_edge_tts_available()
+        def _edge(text: str, out_path: Path) -> None:
+            text = text.strip() or "(no narration)"
+            mp3_path = out_path.with_suffix(".mp3")
+            cmd = [
+                sys.executable, "-m", "edge_tts",
+                "--voice", voice,
+                "--text", text,
+                "--write-media", str(mp3_path),
+            ]
+            proc = subprocess.run(cmd, capture_output=True, text=True)
+            if proc.returncode != 0:
+                sys.stderr.write(proc.stderr)
+                sys.exit(f"edge-tts failed (exit {proc.returncode}) for text: {text[:80]!r}")
+            # Convert MP3 → 22kHz mono PCM WAV so duration probing + concat
+            # behaves identically to the `say` path.
+            conv = subprocess.run(
+                [
+                    ffmpeg, "-y",
+                    "-i", str(mp3_path),
+                    "-ac", "1", "-ar", "22050",
+                    "-c:a", "pcm_s16le",
+                    str(out_path),
+                ],
+                capture_output=True, text=True,
+            )
+            mp3_path.unlink(missing_ok=True)
+            if conv.returncode != 0:
+                sys.stderr.write(conv.stderr)
+                sys.exit("ffmpeg conversion failed converting edge-tts mp3 to wav")
+        return _edge
+
+    sys.exit(f"unknown TTS engine: {engine}")
+
+
 def ensure_say_available() -> None:
     if shutil.which("say") is None:
         sys.exit(
-            "error: --narrate requires macOS `say`, which was not found in PATH.\n"
-            "       (Linux/Windows narration support is not implemented yet.)"
+            "error: --engine say requires macOS `say`, which was not found.\n"
+            "       Try --engine edge instead (cross-platform neural TTS)."
         )
 
 
-def synthesize(text: str, voice: str, out_path: Path) -> None:
-    """macOS `say` → 22kHz mono LE-int16 WAV that Python's wave module can read."""
-    if not text.strip():
-        text = "(no narration)"
-    cmd = [
-        "say",
-        "-v", voice,
-        "--file-format=WAVE",
-        "--data-format=LEI16@22050",
-        "-o", str(out_path),
-        text,
-    ]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
-    if proc.returncode != 0:
-        sys.stderr.write(proc.stderr)
-        sys.exit(f"`say` failed (exit {proc.returncode}) for text: {text[:80]!r}")
+def ensure_edge_tts_available() -> None:
+    try:
+        import edge_tts  # noqa: F401
+    except ModuleNotFoundError:
+        sys.exit(
+            "error: edge-tts not installed.\n"
+            "       run:  pip install -r output/requirements.txt"
+        )
 
 
 def wav_duration(path: Path) -> float:

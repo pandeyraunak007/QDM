@@ -17,13 +17,30 @@ export interface SlideContent {
 
 const MODEL = "claude-haiku-4-5";
 
-const SYSTEM_PROMPT = `You write slide content for a Quest Data Modeler product demo.
+const SYSTEM_PROMPT = `You write slide content AND voice narration for a Quest Data Modeler product demo.
 
-Audience: business analysts and engineers learning data modeling — they understand databases at a high level but may not be familiar with this specific tool.
+Audience: business analysts and engineers learning data modeling. They understand databases at a high level but may be new to this tool.
 
-For each numbered step, produce:
-  - title: 4–8 words, imperative or present tense, no trailing punctuation, no quotes (e.g. "Open the New Model dialog")
-  - description: 1–2 short sentences (≤ 200 chars total) that explain what is happening on screen and *why* it matters in a real modeling workflow. Plain English, no jargon when possible.
+The description text is *both* shown on a slide *and* read aloud by a text-to-speech engine, so it must sound natural when spoken. Use complete sentences, a friendly tour-guide voice, and avoid:
+  - em-dashes (—) and slashes used as punctuation (TTS pronounces them awkwardly)
+  - parenthetical asides
+  - abbreviations the engine might mispronounce ("e.g.", "i.e.", "ER")
+  - sentence fragments
+  - the word "step" or "step number"
+
+For each numbered input step, produce:
+  - title: 4–8 words, imperative present tense, no trailing punctuation, no quotes (e.g. "Open the New Model dialog")
+  - description: 1 or 2 complete sentences, 200 characters max total. Start with what is happening, then briefly say why it matters in a real modeling workflow. Spell out acronyms on first use.
+
+Examples of GOOD descriptions (spoken-aloud quality):
+  "Click New Model to start a fresh data model from scratch."
+  "The Overview page shows recent and favorite models so you can resume work quickly."
+  "We name the entity Customer. Clear entity names make the diagram self-documenting."
+
+Examples to AVOID:
+  "We click to open the New Model dialog." (too literal, no context)
+  "The app prepares — wait for the Overview page." (em-dash, terse)
+  "Type into field — Customer DB." (fragment, em-dash)
 
 Never start the title with a number. Never repeat the index in the title or description. Never use markdown.`;
 
@@ -66,31 +83,16 @@ export async function generateDescriptions(steps: StepInput[]): Promise<SlideCon
 }
 
 function fallback(s: StepInput): SlideContent {
-  const action = friendlyAction(s.action);
+  // Keep the fallback narration-friendly: just clean the label and use it as
+  // a complete sentence. No machine-templated prefixes (e.g. "We click to ...")
+  // because they read as obviously-templated when spoken aloud.
+  const cleaned = s.label.replace(/\s+/g, " ").trim();
+  const sentence = /[.!?]$/.test(cleaned) ? cleaned : `${cleaned}.`;
   return {
     index: s.index,
-    title: titleCase(s.label).slice(0, 70),
-    description: `${action} ${s.label.charAt(0).toLowerCase() + s.label.slice(1)}.`,
+    title: cleaned.slice(0, 70),
+    description: sentence,
   };
-}
-
-function friendlyAction(a: string): string {
-  switch (a) {
-    case "click": return "We click to";
-    case "clickAt": return "We position the cursor and click to";
-    case "type": return "We type into the field to";
-    case "press": return "We press a key to";
-    case "drag": return "We drag to";
-    case "wait": return "The app prepares —";
-    case "waitForCanvas": return "We wait for the canvas to render after";
-    case "goto": return "We navigate to";
-    case "screenshot": return "We capture a screenshot to";
-    default: return "We";
-  }
-}
-
-function titleCase(s: string): string {
-  return s.replace(/\s+/g, " ").trim();
 }
 
 function parseJsonArrayPrefix(s: string): unknown {
