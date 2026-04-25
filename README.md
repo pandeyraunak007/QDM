@@ -267,12 +267,21 @@ npm run video                                # latest run, default timing
 npm run video -- output/<run-dir>            # explicit run directory
 npm run video -- --step-seconds 5            # hold each step longer
 npm run video -- --cover-seconds 4 --fps 60
+npm run video -- --narrate                   # add a voice-over (macOS only)
+npm run video -- --narrate --voice Daniel    # different `say` voice
 ```
 
 Each frame is composed in Pillow (cover slide + one frame per step with a
 caption strip and the screenshot scaled to fit), then assembled by FFmpeg
 into `<run>/demo.mp4`. The captions reuse `steps_described.json` from
 Phase 2 if present, otherwise they're generated with the same logic.
+
+**Narration** (`--narrate`, macOS only). Uses the built-in `say` command
+to speak each step's description with the chosen voice (default
+`Samantha`). Per-frame durations grow to fit the audio + a 0.5s buffer
+(never shorter than the base `--step-seconds`), each clip is padded with
+silence to match its frame duration, and FFmpeg muxes video + audio in
+one pass to AAC. List voices with `say -v '?'`.
 
 FFmpeg discovery order: system `ffmpeg` first, then the static binary
 shipped by `imageio-ffmpeg` (installed by `pip install -r

@@ -27,6 +27,9 @@ interface CliFlags {
   coverSeconds?: string;
   stepSeconds?: string;
   fps?: string;
+  narrate?: boolean;
+  voice?: string;
+  coverNarration?: string;
 }
 
 async function main(): Promise<void> {
@@ -48,6 +51,9 @@ function parseArgs(argv: string[]): CliFlags {
     if (a === "--cover-seconds") flags.coverSeconds = argv[++i];
     else if (a === "--step-seconds") flags.stepSeconds = argv[++i];
     else if (a === "--fps") flags.fps = argv[++i];
+    else if (a === "--narrate") flags.narrate = true;
+    else if (a === "--voice") flags.voice = argv[++i];
+    else if (a === "--cover-narration") flags.coverNarration = argv[++i];
     else if (a === "--latest") flags.runArg = a;
     else if (!a.startsWith("--")) flags.runArg = a;
   }
@@ -61,6 +67,9 @@ function runPython(runDir: string, flags: CliFlags): Promise<void> {
     if (flags.coverSeconds) args.push("--cover-seconds", flags.coverSeconds);
     if (flags.stepSeconds) args.push("--step-seconds", flags.stepSeconds);
     if (flags.fps) args.push("--fps", flags.fps);
+    if (flags.narrate) args.push("--narrate");
+    if (flags.voice) args.push("--voice", flags.voice);
+    if (flags.coverNarration) args.push("--cover-narration", flags.coverNarration);
     const child = spawn("python3", args, { stdio: "inherit" });
     child.on("error", (err) => reject(err));
     child.on("exit", (code) => {

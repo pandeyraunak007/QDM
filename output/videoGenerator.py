@@ -58,9 +58,17 @@ COVER_TINT = (15, 30, 60)
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build demo.mp4 from a run directory.")
     parser.add_argument("run_dir", type=Path, help="path to output/<run> directory")
-    parser.add_argument("--cover-seconds", type=float, default=3.0)
-    parser.add_argument("--step-seconds", type=float, default=4.0)
+    parser.add_argument("--cover-seconds", type=float, default=3.0,
+                        help="minimum cover slide duration (extended if narration is longer)")
+    parser.add_argument("--step-seconds", type=float, default=4.0,
+                        help="minimum per-step duration (extended if narration is longer)")
     parser.add_argument("--fps", type=int, default=30)
+    parser.add_argument("--narrate", action="store_true",
+                        help="synthesize voice-over per step (macOS `say`) and mux into the video")
+    parser.add_argument("--voice", default="Samantha",
+                        help="macOS `say` voice when --narrate is set (default: Samantha)")
+    parser.add_argument("--cover-narration", default="Quest Data Modeler. An automated demo walkthrough.",
+                        help="text spoken on the cover slide when --narrate is set")
     args = parser.parse_args()
 
     run_dir = args.run_dir.resolve()
@@ -84,7 +92,7 @@ def main() -> None:
     cover_path = frames_dir / "00_cover.png"
     compose_cover(flow_name, generated_at, len(steps), cover_path)
 
-    step_frames: list[tuple[Path, float]] = []
+    step_pngs: list[tuple[int, Path, str]] = []  # (index, png_path, narration_text)
     for step in steps:
         idx = step.get("index", 0)
         title = step.get("title") or step.get("label") or f"Step {idx}"
@@ -93,28 +101,84 @@ def main() -> None:
         screenshot_path = resolve_screenshot(run_dir, screenshot)
         out = frames_dir / f"{idx:02d}_step.png"
         compose_step_frame(idx, title, description, screenshot_path, out)
-        step_frames.append((out, args.step_seconds))
+        step_pngs.append((idx, out, description or title))
 
-    concat_path = frames_dir / "concat.txt"
-    write_concat(concat_path, [(cover_path, args.cover_seconds), *step_frames])
-
-    out_mp4 = run_dir / "demo.mp4"
     ffmpeg = locate_ffmpeg()
-    print(f"encoding with ffmpeg: {ffmpeg}")
+    out_mp4 = run_dir / "demo.mp4"
 
-    cmd = [
-        ffmpeg,
-        "-y",
-        "-f", "concat",
-        "-safe", "0",
-        "-i", str(concat_path),
-        "-vf", f"fps={args.fps},format=yuv420p",
-        "-c:v", "libx264",
-        "-preset", "veryfast",
-        "-crf", "20",
-        "-movflags", "+faststart",
-        str(out_mp4),
-    ]
+    if args.narrate:
+        ensure_say_available()
+        audio_dir = run_dir / "audio_clips"
+        if audio_dir.exists():
+            shutil.rmtree(audio_dir)
+        audio_dir.mkdir(parents=True)
+        padded_dir = audio_dir / "padded"
+        padded_dir.mkdir(parents=True)
+
+        print(f"narrating with macOS `say` (voice={args.voice})…")
+
+        cover_audio = audio_dir / "00_cover.wav"
+        synthesize(args.cover_narration, args.voice, cover_audio)
+        cover_dur = max(wav_duration(cover_audio) + 0.5, args.cover_seconds)
+
+        step_audio_specs: list[tuple[Path, float]] = []  # (audio_path, frame_dur)
+        for idx, _, narration_text in step_pngs:
+            out_wav = audio_dir / f"{idx:02d}_step.wav"
+            synthesize(narration_text, args.voice, out_wav)
+            dur = max(wav_duration(out_wav) + 0.5, args.step_seconds)
+            step_audio_specs.append((out_wav, dur))
+
+        # Pad audio clips so each one's duration matches the frame's duration
+        # exactly. Concat demuxer then plays them back-to-back, perfectly
+        # aligned with the corresponding video frames.
+        cover_padded = padded_dir / "00_cover.wav"
+        pad_audio(cover_audio, cover_dur, cover_padded, ffmpeg)
+        padded_step_audios: list[Path] = []
+        for (audio_path, frame_dur), (idx, _, _) in zip(step_audio_specs, step_pngs):
+            padded = padded_dir / f"{idx:02d}_step.wav"
+            pad_audio(audio_path, frame_dur, padded, ffmpeg)
+            padded_step_audios.append(padded)
+
+        frame_durations = [cover_dur] + [d for _, d in step_audio_specs]
+        video_concat = frames_dir / "concat.txt"
+        write_concat(
+            video_concat,
+            [(cover_path, cover_dur), *((png, dur) for (_, png, _), dur in zip(step_pngs, [d for _, d in step_audio_specs]))],
+        )
+        audio_concat = audio_dir / "concat.txt"
+        write_simple_concat(audio_concat, [cover_padded, *padded_step_audios])
+
+        total = sum(frame_durations)
+        print(f"encoding {len(step_pngs) + 1} frames + narration ({total:.1f}s) with ffmpeg: {ffmpeg}")
+
+        cmd = [
+            ffmpeg, "-y",
+            "-f", "concat", "-safe", "0", "-i", str(video_concat),
+            "-f", "concat", "-safe", "0", "-i", str(audio_concat),
+            "-map", "0:v", "-map", "1:a",
+            "-vf", f"fps={args.fps},format=yuv420p",
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+            "-c:a", "aac", "-b:a", "128k", "-ac", "2",
+            "-shortest", "-movflags", "+faststart",
+            str(out_mp4),
+        ]
+    else:
+        video_concat = frames_dir / "concat.txt"
+        write_concat(
+            video_concat,
+            [(cover_path, args.cover_seconds), *((png, args.step_seconds) for _, png, _ in step_pngs)],
+        )
+        print(f"encoding {len(step_pngs) + 1} frames with ffmpeg: {ffmpeg}")
+
+        cmd = [
+            ffmpeg, "-y",
+            "-f", "concat", "-safe", "0", "-i", str(video_concat),
+            "-vf", f"fps={args.fps},format=yuv420p",
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+            "-movflags", "+faststart",
+            str(out_mp4),
+        ]
+
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
         sys.stderr.write(proc.stderr)
@@ -208,6 +272,59 @@ def write_concat(path: Path, frames: list[tuple[Path, float]]) -> None:
     if frames:
         lines.append(f"file '{frames[-1][0].as_posix()}'")
     path.write_text("\n".join(lines) + "\n")
+
+
+def write_simple_concat(path: Path, files: list[Path]) -> None:
+    """Concat list for files whose duration is encoded in the file itself (e.g. WAV)."""
+    lines = [f"file '{f.as_posix()}'" for f in files]
+    path.write_text("\n".join(lines) + "\n")
+
+
+def ensure_say_available() -> None:
+    if shutil.which("say") is None:
+        sys.exit(
+            "error: --narrate requires macOS `say`, which was not found in PATH.\n"
+            "       (Linux/Windows narration support is not implemented yet.)"
+        )
+
+
+def synthesize(text: str, voice: str, out_path: Path) -> None:
+    """macOS `say` → 22kHz mono LE-int16 WAV that Python's wave module can read."""
+    if not text.strip():
+        text = "(no narration)"
+    cmd = [
+        "say",
+        "-v", voice,
+        "--file-format=WAVE",
+        "--data-format=LEI16@22050",
+        "-o", str(out_path),
+        text,
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        sys.stderr.write(proc.stderr)
+        sys.exit(f"`say` failed (exit {proc.returncode}) for text: {text[:80]!r}")
+
+
+def wav_duration(path: Path) -> float:
+    import wave
+    with wave.open(str(path), "rb") as w:
+        return w.getnframes() / float(w.getframerate())
+
+
+def pad_audio(input_wav: Path, target_seconds: float, output_wav: Path, ffmpeg: str) -> None:
+    """Pad a WAV with trailing silence so total duration is target_seconds."""
+    cmd = [
+        ffmpeg, "-y",
+        "-i", str(input_wav),
+        "-af", f"apad=whole_dur={target_seconds:.3f}",
+        "-c:a", "pcm_s16le",
+        str(output_wav),
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        sys.stderr.write(proc.stderr)
+        sys.exit(f"audio pad failed for {input_wav.name}")
 
 
 def locate_ffmpeg() -> str:
