@@ -194,14 +194,21 @@
     {
       "action": "click",
       "selector": "[aria-label=\"Add Relationships\"]",
-      "label": "Activate the Add Relationships tool",
-      "narration": "Pick the Add Relationships tool..."
+      "label": "Open the Add Relationships menu",
+      "narration": "Open the Add Relationships menu..."
     },
     {
       "action": "wait",
-      "delayMs": 600,
-      "label": "Relationship tool ready",
-      "narration": ""
+      "selector": "text=Non-Identifying",
+      "label": "Wait for the relationship subtype menu",
+      "narration": "",
+      "timeoutMs": 5000
+    },
+    {
+      "action": "click",
+      "selector": ":text-is(\"Non-Identifying\")",
+      "label": "Pick a Non-Identifying relationship",
+      "narration": "and pick a Non-Identifying relationship."
     },
     {
       "action": "drag",
@@ -210,9 +217,9 @@
       "y": 390,
       "toX": 1050,
       "toY": 390,
-      "steps": 18,
+      "steps": 50,
       "label": "Drag from Customer to Orders",
-      "narration": "and drag from Customer to Orders."
+      "narration": "Drag from Customer to Orders to draw the relationship line."
     },
     {
       "action": "wait",
@@ -228,9 +235,59 @@
     },
     {
       "action": "click",
+      "selector": ":text-is(\"Logical\")",
+      "label": "Open the view-mode dropdown",
+      "narration": "Now... here's what makes this a true Logical-Physical model. Click the mode dropdown..."
+    },
+    {
+      "action": "wait",
+      "selector": ":text-is(\"Physical\")",
+      "label": "Wait for the view-mode menu",
+      "narration": "",
+      "timeoutMs": 5000
+    },
+    {
+      "action": "click",
+      "selector": ":text-is(\"Physical\")",
+      "label": "Switch to the Physical view",
+      "narration": "and switch to the Physical view."
+    },
+    {
+      "action": "wait",
+      "delayMs": 3000,
+      "label": "Physical view renders",
+      "narration": "The Model Explorer now shows database concepts... Tables, Schemas, Stored Procedures, Views, and Functions. Same model... a different lens."
+    },
+    {
+      "action": "click",
+      "selector": ":text-is(\"Physical\")",
+      "label": "Open the view-mode dropdown again",
+      "narration": "Switch back to Logical..."
+    },
+    {
+      "action": "wait",
+      "selector": ":text-is(\"Logical\")",
+      "label": "Wait for the view-mode menu",
+      "narration": "",
+      "timeoutMs": 5000
+    },
+    {
+      "action": "click",
+      "selector": ":text-is(\"Logical\")",
+      "label": "Return to the Logical view",
+      "narration": "back to where we started."
+    },
+    {
+      "action": "wait",
+      "delayMs": 2000,
+      "label": "Logical view restored",
+      "narration": ""
+    },
+    {
+      "action": "click",
       "selector": "[aria-label=\"Mart\"]",
       "label": "Open the Mart save menu",
-      "narration": "and open the Mart menu to save."
+      "narration": "Now let's save. Open the Mart menu..."
     },
     {
       "action": "wait",

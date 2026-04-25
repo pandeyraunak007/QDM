@@ -163,14 +163,21 @@
     {
       "action": "click",
       "selector": "[aria-label=\"Add Relationships\"]",
-      "label": "Activate the Add Relationships tool",
-      "narration": "Next, let's define the relationship between them. Select the Add Relationships tool..."
+      "label": "Open the Add Relationships menu",
+      "narration": "Next, let's define the relationship between them. Open the Add Relationships menu..."
     },
     {
       "action": "wait",
-      "delayMs": 600,
-      "label": "Relationship tool ready",
-      "narration": ""
+      "selector": "text=Non-Identifying",
+      "label": "Wait for the relationship subtype menu",
+      "narration": "",
+      "timeoutMs": 5000
+    },
+    {
+      "action": "click",
+      "selector": ":text-is(\"Non-Identifying\")",
+      "label": "Pick a Non-Identifying relationship",
+      "narration": "and pick a Non-Identifying relationship type."
     },
     {
       "action": "drag",
@@ -179,9 +186,9 @@
       "y": 390,
       "toX": 1050,
       "toY": 390,
-      "steps": 18,
-      "label": "Drag from Customer to Orders to draw a relationship",
-      "narration": "And drag from Customer to Orders."
+      "steps": 50,
+      "label": "Drag from Customer to Orders",
+      "narration": "Now drag from Customer to Orders to connect them."
     },
     {
       "action": "wait",
