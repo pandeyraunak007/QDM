@@ -54,6 +54,20 @@ DESC_FG = (200, 210, 230)
 BADGE_FG = (110, 195, 255)
 COVER_TINT = (15, 30, 60)
 
+# Quest brand logo overlaid on cover/outro slides + step-frame caption strip.
+LOGO_PATH = Path(__file__).resolve().parent.parent / "assets" / "quest_logo.png"
+
+
+def load_logo(target_height: int) -> Image.Image | None:
+    """Open the Quest logo, scale to target height preserving aspect ratio."""
+    if not LOGO_PATH.exists():
+        return None
+    img = Image.open(LOGO_PATH).convert("RGBA")
+    w, h = img.size
+    new_h = target_height
+    new_w = int(w * (new_h / h))
+    return img.resize((new_w, new_h), Image.LANCZOS)
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build demo.mp4 from a run directory.")
@@ -76,6 +90,10 @@ def main() -> None:
     parser.add_argument("--outro-narration", default=None,
                         help="text spoken on a final outro slide. If omitted, uses the manifest's "
                              "outro_narration if present, otherwise no outro slide is added.")
+    parser.add_argument("--skip-cover", action="store_true",
+                        help="omit the cover slide entirely (for stitching multi-section demos)")
+    parser.add_argument("--skip-outro", action="store_true",
+                        help="omit the outro slide entirely (for stitching multi-section demos)")
     args = parser.parse_args()
 
     run_dir = args.run_dir.resolve()
@@ -89,23 +107,31 @@ def main() -> None:
     if not steps:
         sys.exit("error: manifest has no steps")
 
-    cover_narration = (
-        args.cover_narration
-        or manifest.get("cover_narration")
-        or "Quest Data Modeler. An automated demo walkthrough."
-    )
-    outro_narration = args.outro_narration or manifest.get("outro_narration")
+    if args.skip_cover:
+        cover_narration = None
+    else:
+        cover_narration = (
+            args.cover_narration
+            or manifest.get("cover_narration")
+            or "Quest Data Modeler. An automated demo walkthrough."
+        )
+    if args.skip_outro:
+        outro_narration = None
+    else:
+        outro_narration = args.outro_narration or manifest.get("outro_narration")
 
     frames_dir = run_dir / "video_frames"
     if frames_dir.exists():
         shutil.rmtree(frames_dir)
     frames_dir.mkdir(parents=True)
 
-    expected_frames = len(steps) + 1 + (1 if outro_narration else 0)
+    expected_frames = len(steps) + (1 if cover_narration else 0) + (1 if outro_narration else 0)
     print(f"composing {expected_frames} frames…")
 
-    cover_path = frames_dir / "00_cover.png"
-    compose_cover(flow_name, generated_at, len(steps), cover_path)
+    cover_path: Path | None = None
+    if cover_narration:
+        cover_path = frames_dir / "00_cover.png"
+        compose_cover(flow_name, generated_at, len(steps), cover_path)
 
     step_pngs: list[tuple[int, Path, str]] = []  # (index, png_path, narration_text)
     for step in steps:
@@ -144,9 +170,12 @@ def main() -> None:
 
         print(f"narrating with engine={args.engine} voice={voice}…")
 
-        cover_audio = audio_dir / "00_cover.wav"
-        synth_or_silence(synth, cover_narration, cover_audio, ffmpeg, fallback_silence_seconds=args.cover_seconds)
-        cover_dur = max(wav_duration(cover_audio) + 0.5, args.cover_seconds)
+        cover_audio: Path | None = None
+        cover_dur: float = 0.0
+        if cover_narration and cover_path is not None:
+            cover_audio = audio_dir / "00_cover.wav"
+            synth_or_silence(synth, cover_narration, cover_audio, ffmpeg, fallback_silence_seconds=args.cover_seconds)
+            cover_dur = max(wav_duration(cover_audio) + 0.5, args.cover_seconds)
 
         step_audio_specs: list[tuple[Path, float]] = []  # (audio_path, frame_dur)
         for idx, _, narration_text in step_pngs:
@@ -165,8 +194,10 @@ def main() -> None:
         # Pad audio clips so each one's duration matches the frame's duration
         # exactly. Concat demuxer then plays them back-to-back, perfectly
         # aligned with the corresponding video frames.
-        cover_padded = padded_dir / "00_cover.wav"
-        pad_audio(cover_audio, cover_dur, cover_padded, ffmpeg)
+        cover_padded: Path | None = None
+        if cover_audio is not None and cover_path is not None:
+            cover_padded = padded_dir / "00_cover.wav"
+            pad_audio(cover_audio, cover_dur, cover_padded, ffmpeg)
         padded_step_audios: list[Path] = []
         for (audio_path, frame_dur), (idx, _, _) in zip(step_audio_specs, step_pngs):
             padded = padded_dir / f"{idx:02d}_step.wav"
@@ -177,20 +208,25 @@ def main() -> None:
             outro_padded = padded_dir / "99_outro.wav"
             pad_audio(outro_audio, outro_dur, outro_padded, ffmpeg)
 
-        frame_durations = [cover_dur] + [d for _, d in step_audio_specs]
+        frame_durations = [d for _, d in step_audio_specs]
+        if cover_dur:
+            frame_durations.insert(0, cover_dur)
         if outro_dur:
             frame_durations.append(outro_dur)
 
         video_entries: list[tuple[Path, float]] = [
-            (cover_path, cover_dur),
             *((png, dur) for (_, png, _), dur in zip(step_pngs, [d for _, d in step_audio_specs])),
         ]
+        if cover_path is not None and cover_dur:
+            video_entries.insert(0, (cover_path, cover_dur))
         if outro_path is not None and outro_dur:
             video_entries.append((outro_path, outro_dur))
         video_concat = frames_dir / "concat.txt"
         write_concat(video_concat, video_entries)
 
-        audio_files: list[Path] = [cover_padded, *padded_step_audios]
+        audio_files: list[Path] = [*padded_step_audios]
+        if cover_padded is not None:
+            audio_files.insert(0, cover_padded)
         if outro_padded is not None:
             audio_files.append(outro_padded)
         audio_concat = audio_dir / "concat.txt"
@@ -213,9 +249,10 @@ def main() -> None:
     else:
         video_concat = frames_dir / "concat.txt"
         entries: list[tuple[Path, float]] = [
-            (cover_path, args.cover_seconds),
             *((png, args.step_seconds) for _, png, _ in step_pngs),
         ]
+        if cover_path is not None:
+            entries.insert(0, (cover_path, args.cover_seconds))
         if outro_path is not None:
             entries.append((outro_path, args.cover_seconds))
         write_concat(video_concat, entries)
@@ -261,17 +298,22 @@ def compose_cover(flow_name: str, generated_at: str, step_count: int, out_path: 
     canvas = Image.new("RGB", (WIDTH, HEIGHT), COVER_TINT)
     draw = ImageDraw.Draw(canvas)
 
+    # Quest logo top-left
+    logo = load_logo(target_height=110)
+    if logo is not None:
+        canvas.paste(logo, (100, 100), logo)
+
     sub_font = load_font(40)
     title_font = load_font(80)
     flow_font = load_font(36)
     small_font = load_font(22)
 
-    draw.text((100, 360), "Quest Data Modeler", fill=ACCENT, font=sub_font)
-    draw.text((100, 420), "Automated Demo Walkthrough", fill=TITLE_FG, font=title_font)
-    draw.text((100, 580), flow_name, fill=DESC_FG, font=flow_font)
+    draw.text((100, 380), "Quest Data Modeler", fill=ACCENT, font=sub_font)
+    draw.text((100, 440), "Automated Demo Walkthrough", fill=TITLE_FG, font=title_font)
+    draw.text((100, 600), flow_name, fill=DESC_FG, font=flow_font)
 
     pretty = format_timestamp(generated_at)
-    draw.text((100, 640), f"{step_count} steps · generated {pretty}", fill=(150, 165, 190), font=small_font)
+    draw.text((100, 660), f"{step_count} steps · generated {pretty}", fill=(150, 165, 190), font=small_font)
 
     canvas.save(out_path)
 
@@ -279,12 +321,18 @@ def compose_cover(flow_name: str, generated_at: str, step_count: int, out_path: 
 def compose_outro(out_path: Path) -> None:
     canvas = Image.new("RGB", (WIDTH, HEIGHT), COVER_TINT)
     draw = ImageDraw.Draw(canvas)
+
+    # Quest logo top-left
+    logo = load_logo(target_height=110)
+    if logo is not None:
+        canvas.paste(logo, (100, 100), logo)
+
     sub_font = load_font(40)
     title_font = load_font(80)
     small_font = load_font(28)
-    draw.text((100, 380), "Demo Complete", fill=ACCENT, font=sub_font)
-    draw.text((100, 440), "Thanks for watching", fill=TITLE_FG, font=title_font)
-    draw.text((100, 600), "See you in the next demo.", fill=DESC_FG, font=small_font)
+    draw.text((100, 400), "Demo Complete", fill=ACCENT, font=sub_font)
+    draw.text((100, 460), "Thanks for watching", fill=TITLE_FG, font=title_font)
+    draw.text((100, 620), "Quest Data Modeler", fill=DESC_FG, font=small_font)
     canvas.save(out_path)
 
 
@@ -301,9 +349,16 @@ def compose_step_frame(index: int, title: str, description: str, screenshot: Pat
     desc_font = load_font(22)
 
     draw.text((SIDE_PAD, 28), f"STEP {index:02d}", fill=BADGE_FG, font=badge_font)
-    draw.text((SIDE_PAD, 60), wrap_to_width(title, title_font, WIDTH - 2 * SIDE_PAD, max_lines=1), fill=TITLE_FG, font=title_font)
+    # Reserve space for the logo on the right so titles don't collide with it
+    logo = load_logo(target_height=70)
+    title_max_w = WIDTH - 2 * SIDE_PAD - ((logo.width + 40) if logo is not None else 0)
+    draw.text((SIDE_PAD, 60), wrap_to_width(title, title_font, title_max_w, max_lines=1), fill=TITLE_FG, font=title_font)
     desc_wrapped = wrap_to_width(description, desc_font, WIDTH - 2 * SIDE_PAD, max_lines=2)
     draw.text((SIDE_PAD, 120), desc_wrapped, fill=DESC_FG, font=desc_font)
+
+    # Quest logo top-right of caption strip
+    if logo is not None:
+        canvas.paste(logo, (WIDTH - SIDE_PAD - logo.width, 65), logo)
 
     # Screenshot below
     region_y = CAPTION_H + TOP_PAD_AFTER_CAPTION

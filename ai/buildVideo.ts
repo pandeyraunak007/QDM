@@ -32,6 +32,8 @@ interface CliFlags {
   voice?: string;
   coverNarration?: string;
   outroNarration?: string;
+  skipCover?: boolean;
+  skipOutro?: boolean;
 }
 
 async function main(): Promise<void> {
@@ -58,6 +60,8 @@ function parseArgs(argv: string[]): CliFlags {
     else if (a === "--voice") flags.voice = argv[++i];
     else if (a === "--cover-narration") flags.coverNarration = argv[++i];
     else if (a === "--outro-narration") flags.outroNarration = argv[++i];
+    else if (a === "--skip-cover") flags.skipCover = true;
+    else if (a === "--skip-outro") flags.skipOutro = true;
     else if (a === "--latest") flags.runArg = a;
     else if (!a.startsWith("--")) flags.runArg = a;
   }
@@ -76,6 +80,8 @@ function runPython(runDir: string, flags: CliFlags): Promise<void> {
     if (flags.voice) args.push("--voice", flags.voice);
     if (flags.coverNarration) args.push("--cover-narration", flags.coverNarration);
     if (flags.outroNarration) args.push("--outro-narration", flags.outroNarration);
+    if (flags.skipCover) args.push("--skip-cover");
+    if (flags.skipOutro) args.push("--skip-outro");
     const child = spawn("python3", args, { stdio: "inherit" });
     child.on("error", (err) => reject(err));
     child.on("exit", (code) => {

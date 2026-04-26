@@ -1,0 +1,411 @@
+{
+  "flow_name": "Quest Data Modeler — End-to-End Walkthrough",
+  "base_url": "http://questpmdmc.myerwin.com/overview",
+  "cover_narration": "In this walkthrough, we'll take Quest Data Modeler from a blank slate to a fully designed data model... and then turn it into runnable SQL. Sign in, describe the model in plain English, edit metadata in the Quick Editor, drop in another entity from the canvas, and finish with Forward Engineering. Let's get started.",
+  "outro_narration": "And that's Quest Data Modeler. Plain English to a real model... metadata editing without dialogs... a canvas that lets you keep building... and Forward Engineering straight to deployment-ready SQL. Thanks for watching.",
+  "steps": [
+    {
+      "action": "wait",
+      "selector": "text=Welcome back",
+      "label": "Sign in and land on Overview",
+      "narration": "Sign in to Quest Data Modeler and you land on the Overview page. Recent models, quick actions, and an AI generator all one click away.",
+      "timeoutMs": 60000
+    },
+    {
+      "action": "wait",
+      "delayMs": 2500,
+      "label": "Linger on overview",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Click here to get started\")",
+      "label": "Open the AI Model Generator",
+      "narration": "Open the AI Model Generator. Just describe the data model you want... in plain English."
+    },
+    {
+      "action": "wait",
+      "selector": "textarea",
+      "label": "Wait for the prompt textarea",
+      "narration": "",
+      "timeoutMs": 10000
+    },
+    {
+      "action": "wait",
+      "delayMs": 1500,
+      "label": "Settle the AI panel",
+      "narration": ""
+    },
+    {
+      "action": "type",
+      "selector": "textarea",
+      "value": "Create a retail data model with three entities: Customer with id, name, email, phone, created_at; Product with id, name, sku, price, inventory_qty; and Orders with id, customer_id, order_date, total_amount, status. Customer has many Orders.",
+      "label": "Type the natural language prompt",
+      "narration": "Describe a retail data model in a single paragraph... three entities, the fields you want, and the relationships between them."
+    },
+    {
+      "action": "wait",
+      "delayMs": 1500,
+      "label": "Prompt visible",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Create\")",
+      "label": "Submit the AI prompt",
+      "narration": "Hit Create... and the AI gets to work."
+    },
+    {
+      "action": "wait",
+      "selector": "text=Retail Core",
+      "label": "Wait for AI-generated preview",
+      "narration": "A few seconds later, here's the proposed model. A name, a description, three entities with their attributes, and the relationships pre-wired between them.",
+      "timeoutMs": 60000
+    },
+    {
+      "action": "wait",
+      "delayMs": 4500,
+      "label": "Inspect the generated preview",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Confirm\")",
+      "label": "Confirm and create the model",
+      "narration": "Click Confirm to materialize this as a real model in the modeler."
+    },
+    {
+      "action": "wait",
+      "delayMs": 60000,
+      "label": "AI executes the model build plan",
+      "narration": "Give it a moment as the AI walks through its execution plan... creating entities, attributes, and relationships in our canvas."
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Quick Editor\")",
+      "label": "Switch to Quick Editor",
+      "narration": "Now switch over to the Quick Editor... a spreadsheet for our model's metadata."
+    },
+    {
+      "action": "wait",
+      "delayMs": 2500,
+      "label": "Quick Editor active",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": ":text-is(\"Entities\")",
+      "label": "Pick Entities in the Model Explorer",
+      "narration": "Click Entities in the Model Explorer to see every entity in one grid."
+    },
+    {
+      "action": "wait",
+      "selector": "text=Entity Quick Editor",
+      "label": "Entity Quick Editor visible",
+      "narration": "Every entity is a row. Names and properties... all editable inline.",
+      "timeoutMs": 10000
+    },
+    {
+      "action": "wait",
+      "delayMs": 3000,
+      "label": "Linger on Entity Quick Editor",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": ":text-is(\"Domains\")",
+      "label": "Pivot to Domains",
+      "narration": "Use the Model Explorer to pivot... Domains for reusable column types."
+    },
+    {
+      "action": "wait",
+      "delayMs": 3000,
+      "label": "Linger on Domains",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": ":text-is(\"Relationships\")",
+      "label": "Pivot to Relationships",
+      "narration": "Relationships between entities..."
+    },
+    {
+      "action": "wait",
+      "delayMs": 3000,
+      "label": "Linger on Relationships",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": ":text-is(\"Entities\")",
+      "label": "Back to Entities",
+      "narration": "Back to Entities for one quick edit."
+    },
+    {
+      "action": "wait",
+      "selector": "text=Entity Quick Editor",
+      "label": "Wait for Entities grid",
+      "narration": "",
+      "timeoutMs": 5000
+    },
+    {
+      "action": "dblclick",
+      "selector": "text=Customer",
+      "label": "Drill into Customer",
+      "narration": "Double-click to drill into Customer's full detail editor."
+    },
+    {
+      "action": "wait",
+      "selector": "input[value=\"Customer\"]",
+      "label": "Wait for the entity detail editor",
+      "narration": "Properties, Attributes, Definition, Style... every metadata aspect at our fingertips.",
+      "timeoutMs": 8000
+    },
+    {
+      "action": "wait",
+      "delayMs": 2500,
+      "label": "Linger on detail editor",
+      "narration": ""
+    },
+    {
+      "action": "type",
+      "selector": "input[value=\"Customer\"]",
+      "value": "Customers",
+      "label": "Rename Customer to Customers",
+      "narration": "Rename Customer to Customers right inside the Name field."
+    },
+    {
+      "action": "press",
+      "value": "Tab",
+      "label": "Commit the rename",
+      "narration": ""
+    },
+    {
+      "action": "wait",
+      "delayMs": 2500,
+      "label": "Rename committed",
+      "narration": ""
+    },
+    {
+      "action": "clickAt",
+      "selector": "body",
+      "x": 391,
+      "y": 132,
+      "label": "Back to the grid",
+      "narration": "Back to the grid... and the row is now Customers. No save button. Done."
+    },
+    {
+      "action": "wait",
+      "delayMs": 2500,
+      "label": "Show renamed row",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Diagram View\")",
+      "label": "Back to Diagram View",
+      "narration": "Switch back to the Diagram View... and our edits are part of the canvas."
+    },
+    {
+      "action": "wait",
+      "delayMs": 4000,
+      "label": "Canvas with generated entities",
+      "narration": "Need one more entity? The bottom toolbar has us covered."
+    },
+    {
+      "action": "click",
+      "selector": "[aria-label=\"Add Entity\"]",
+      "label": "Click Add Entity in the bottom toolbar",
+      "narration": "Click Add Entity..."
+    },
+    {
+      "action": "wait",
+      "delayMs": 800,
+      "label": "Tool ready",
+      "narration": ""
+    },
+    {
+      "action": "clickAt",
+      "selector": "body",
+      "x": 600,
+      "y": 720,
+      "label": "Place the new entity on canvas",
+      "narration": "drop it on the canvas..."
+    },
+    {
+      "action": "wait",
+      "selector": "input#table-name",
+      "label": "Wait for the New Entity dialog",
+      "narration": "",
+      "timeoutMs": 10000
+    },
+    {
+      "action": "type",
+      "selector": "input#table-name",
+      "value": "OrderLine",
+      "label": "Name the entity OrderLine",
+      "narration": "and name it OrderLine."
+    },
+    {
+      "action": "press",
+      "selector": "input#table-name",
+      "value": "Tab",
+      "label": "Commit OrderLine name",
+      "narration": ""
+    },
+    {
+      "action": "clickAt",
+      "selector": "body",
+      "x": 200,
+      "y": 750,
+      "label": "Close the dialog",
+      "narration": ""
+    },
+    {
+      "action": "wait",
+      "delayMs": 4000,
+      "label": "OrderLine on the canvas",
+      "narration": "OrderLine joins our model alongside the AI-generated entities."
+    },
+    {
+      "action": "goto",
+      "url": "http://questpmdmc.myerwin.com/overview",
+      "label": "Back to Overview",
+      "narration": "To round things off... let's turn a model into runnable SQL. Forward Engineering is for Logical/Physical models, so jump back to Overview and open a Logical/Physical sample.",
+      "timeoutMs": 30000
+    },
+    {
+      "action": "wait",
+      "selector": "text=Welcome back",
+      "label": "Overview loaded",
+      "narration": "",
+      "timeoutMs": 30000
+    },
+    {
+      "action": "wait",
+      "delayMs": 2000,
+      "label": "Settle Overview",
+      "narration": ""
+    },
+    {
+      "action": "dblclick",
+      "selector": "span:text-is(\"MFW_LP_TEST\")",
+      "force": true,
+      "label": "Open the LP sample model",
+      "narration": "Open the Logical/Physical sample model."
+    },
+    {
+      "action": "wait",
+      "selector": "canvas",
+      "label": "LP model canvas loaded",
+      "narration": "",
+      "timeoutMs": 30000
+    },
+    {
+      "action": "wait",
+      "delayMs": 6000,
+      "label": "Linger on LP model",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "[aria-label=\"Tools\"]",
+      "label": "Open the canvas Tools menu",
+      "narration": "Open the Tools menu in the bottom toolbar."
+    },
+    {
+      "action": "wait",
+      "delayMs": 1200,
+      "label": "Tools menu open",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "[role=\"menuitem\"]:has-text(\"Forward Engineering\")",
+      "label": "Launch Forward Engineering",
+      "narration": "Pick Forward Engineering."
+    },
+    {
+      "action": "wait",
+      "selector": "text=Forward Engineer",
+      "label": "FE wizard visible",
+      "narration": "The Forward Engineering wizard walks us through the options...",
+      "timeoutMs": 15000
+    },
+    {
+      "action": "wait",
+      "delayMs": 2500,
+      "label": "Linger on Overview step",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Next\")",
+      "label": "Next: Option Selection",
+      "narration": "Step through the choices... what to include..."
+    },
+    {
+      "action": "wait",
+      "delayMs": 2000,
+      "label": "Option Selection",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Next\")",
+      "label": "Next: Owner Override",
+      "narration": "schema owners..."
+    },
+    {
+      "action": "wait",
+      "delayMs": 2000,
+      "label": "Owner Override",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Next\")",
+      "label": "Next: Object Filter",
+      "narration": "object filters..."
+    },
+    {
+      "action": "wait",
+      "delayMs": 2000,
+      "label": "Object Filter",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Next\")",
+      "label": "Next: Preview",
+      "narration": "and straight to the Preview."
+    },
+    {
+      "action": "wait",
+      "selector": "text=Schema generation preview",
+      "label": "SQL preview rendered",
+      "narration": "Here's the generated DDL. CREATE TABLE for every entity... primary keys, constraints, the whole schema... ready to run against Microsoft Fabric Data Warehouse.",
+      "timeoutMs": 15000
+    },
+    {
+      "action": "wait",
+      "delayMs": 6000,
+      "label": "Linger on SQL preview",
+      "narration": ""
+    },
+    {
+      "action": "clickAt",
+      "selector": "body",
+      "x": 1399,
+      "y": 32,
+      "label": "Close the FE wizard",
+      "narration": "Close the wizard... entire workflow done without leaving the canvas."
+    },
+    {
+      "action": "wait",
+      "delayMs": 2500,
+      "label": "Back on canvas",
+      "narration": ""
+    }
+  ]
+}

@@ -1,0 +1,372 @@
+{
+  "flow_name": "Quest Data Modeler — AI Features Showcase",
+  "base_url": "http://questpmdmc.myerwin.com/overview",
+  "cover_narration": "AI-first data modeling. In this walkthrough we'll generate a Logical-Physical model for Microsoft Fabric from a single sentence... then iterate on it through the built-in chatbot... and finish by forward-engineering production-ready SQL. All without leaving the canvas.",
+  "outro_narration": "From plain English to a fully-modeled Microsoft Fabric warehouse — entities, attributes, relationships, and runnable DDL — all driven by the AI right inside the canvas. That's the AI feature set in Quest Data Modeler.",
+  "steps": [
+    {
+      "action": "wait",
+      "selector": "text=Welcome back",
+      "label": "Sign in and land on Overview",
+      "narration": "Sign in to Quest Data Modeler. The Overview page leads with the AI Model Generator.",
+      "timeoutMs": 60000
+    },
+    {
+      "action": "wait",
+      "delayMs": 2500,
+      "label": "Linger on overview",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Click here to get started\")",
+      "label": "Open the AI Model Generator",
+      "narration": "Open the AI Model Generator."
+    },
+    {
+      "action": "wait",
+      "selector": "textarea",
+      "label": "Wait for the prompt textarea",
+      "narration": "",
+      "timeoutMs": 10000
+    },
+    {
+      "action": "wait",
+      "delayMs": 1500,
+      "label": "Settle the AI panel",
+      "narration": ""
+    },
+    {
+      "action": "clickAt",
+      "selector": "body",
+      "x": 205,
+      "y": 645,
+      "label": "Open the model-type selector",
+      "narration": "Pick the model type using the controls under the prompt."
+    },
+    {
+      "action": "wait",
+      "delayMs": 1500,
+      "label": "Wait for the type popover",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "input[type=\"radio\"][value=\"LOGICAL/PHYSICAL\"]",
+      "force": true,
+      "label": "Choose Logical/Physical",
+      "narration": "Choose Logical/Physical so the model carries database metadata for forward engineering."
+    },
+    {
+      "action": "wait",
+      "delayMs": 1500,
+      "label": "Selection committed",
+      "narration": ""
+    },
+    {
+      "action": "press",
+      "value": "Escape",
+      "label": "Close type popover",
+      "narration": ""
+    },
+    {
+      "action": "wait",
+      "delayMs": 1500,
+      "label": "Show LP chip and Microsoft Fabric",
+      "narration": "Logical/Physical is set... and Microsoft Fabric is the database target."
+    },
+    {
+      "action": "type",
+      "selector": "textarea",
+      "value": "Create a retail data model with three entities for Microsoft Fabric: Customer with id, name, email, phone, created_at; Product with id, name, sku, price, inventory_qty; and Orders with id, customer_id, order_date, total_amount, status. Customer has many Orders.",
+      "label": "Type the natural language prompt",
+      "narration": "Now describe the model in plain English... three retail entities and the relationships between them."
+    },
+    {
+      "action": "wait",
+      "delayMs": 1500,
+      "label": "Prompt visible",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Create\")",
+      "label": "Submit the AI prompt",
+      "narration": "Click Create... and the AI gets to work."
+    },
+    {
+      "action": "wait",
+      "selector": "text=Retail Core",
+      "label": "Wait for AI-generated preview",
+      "narration": "Within a few seconds the AI proposes a model... a name, three entities with attributes, and pre-wired relationships.",
+      "timeoutMs": 60000
+    },
+    {
+      "action": "wait",
+      "delayMs": 4500,
+      "label": "Inspect the generated preview",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Confirm\")",
+      "label": "Confirm and create the model",
+      "narration": "Confirm to materialize this as a real Logical-Physical model on the canvas."
+    },
+    {
+      "action": "wait",
+      "delayMs": 60000,
+      "label": "AI executes the model build plan",
+      "narration": "The AI walks through its execution plan... creating entities, attributes, and relationships in our Microsoft Fabric model."
+    },
+    {
+      "action": "wait",
+      "selector": "textarea[placeholder*=\"Describe changes\"]",
+      "label": "AI conversation panel ready",
+      "narration": "Now the canvas is live. On the right, the erwin AI conversation panel is waiting for the next instruction... we can keep iterating on the model in plain English.",
+      "timeoutMs": 30000
+    },
+    {
+      "action": "wait",
+      "delayMs": 3000,
+      "label": "Linger on conversation panel",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "textarea[placeholder*=\"Describe changes\"]",
+      "label": "Focus the chat input",
+      "narration": "Let's add an OrderLine table for line-item detail."
+    },
+    {
+      "action": "type",
+      "selector": "textarea[placeholder*=\"Describe changes\"]",
+      "value": "Add a new entity called OrderLine with attributes: id (primary key), order_id, product_id, quantity, unit_price, and line_total.",
+      "label": "Type 'add OrderLine' instruction",
+      "narration": "Just type what you want... add an OrderLine entity with id, order_id, product_id, quantity, unit_price, and line_total."
+    },
+    {
+      "action": "wait",
+      "delayMs": 1500,
+      "label": "Prompt typed",
+      "narration": ""
+    },
+    {
+      "action": "press",
+      "selector": "textarea[placeholder*=\"Describe changes\"]",
+      "value": "Enter",
+      "label": "Send the OrderLine prompt",
+      "narration": "Hit Enter. The AI plans the change..."
+    },
+    {
+      "action": "wait",
+      "delayMs": 45000,
+      "label": "AI executes OrderLine creation",
+      "narration": "and executes it — OrderLine joins the canvas as a real entity with all six attributes."
+    },
+    {
+      "action": "click",
+      "selector": "textarea[placeholder*=\"Describe changes\"]",
+      "label": "Focus chat for relationships",
+      "narration": ""
+    },
+    {
+      "action": "type",
+      "selector": "textarea[placeholder*=\"Describe changes\"]",
+      "value": "Add foreign key relationships: order_id in OrderLine references Orders.id, and product_id in OrderLine references Product.id.",
+      "label": "Type relationships instruction",
+      "narration": "Next... wire up the relationships. Foreign keys from OrderLine into Orders and Product."
+    },
+    {
+      "action": "wait",
+      "delayMs": 1500,
+      "label": "Relationships prompt typed",
+      "narration": ""
+    },
+    {
+      "action": "press",
+      "selector": "textarea[placeholder*=\"Describe changes\"]",
+      "value": "Enter",
+      "label": "Send relationships prompt",
+      "narration": ""
+    },
+    {
+      "action": "wait",
+      "delayMs": 40000,
+      "label": "AI wires the relationships",
+      "narration": "The AI redraws the canvas with proper foreign-key relationships between OrderLine, Orders, and Product."
+    },
+    {
+      "action": "click",
+      "selector": "textarea[placeholder*=\"Describe changes\"]",
+      "label": "Focus chat for attributes",
+      "narration": ""
+    },
+    {
+      "action": "type",
+      "selector": "textarea[placeholder*=\"Describe changes\"]",
+      "value": "Add a discount_percent decimal attribute to OrderLine and a loyalty_tier varchar attribute to Customer.",
+      "label": "Type attribute additions",
+      "narration": "Need a couple more columns? Same conversation. Add a discount_percent on OrderLine and a loyalty_tier on Customer."
+    },
+    {
+      "action": "wait",
+      "delayMs": 1500,
+      "label": "Attribute prompt typed",
+      "narration": ""
+    },
+    {
+      "action": "press",
+      "selector": "textarea[placeholder*=\"Describe changes\"]",
+      "value": "Enter",
+      "label": "Send attribute prompt",
+      "narration": ""
+    },
+    {
+      "action": "wait",
+      "delayMs": 35000,
+      "label": "AI adds attributes",
+      "narration": "Both columns are added in seconds — without ever opening a property dialog."
+    },
+    {
+      "action": "goto",
+      "url": "http://questpmdmc.myerwin.com/overview",
+      "label": "Back to Overview for FE",
+      "narration": "To finish, let's forward-engineer a Logical-Physical model into runnable SQL. Open a Logical-Physical sample.",
+      "timeoutMs": 30000
+    },
+    {
+      "action": "wait",
+      "selector": "text=Welcome back",
+      "label": "Overview loaded",
+      "narration": "",
+      "timeoutMs": 30000
+    },
+    {
+      "action": "wait",
+      "delayMs": 2000,
+      "label": "Settle Overview",
+      "narration": ""
+    },
+    {
+      "action": "dblclick",
+      "selector": "span:text-is(\"MFW_LP_TEST\")",
+      "force": true,
+      "label": "Open the LP sample model",
+      "narration": ""
+    },
+    {
+      "action": "wait",
+      "selector": "canvas",
+      "label": "LP model canvas loaded",
+      "narration": "",
+      "timeoutMs": 30000
+    },
+    {
+      "action": "wait",
+      "delayMs": 6000,
+      "label": "Linger on LP model",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "[aria-label=\"Tools\"]",
+      "label": "Open the canvas Tools menu",
+      "narration": "Open the Tools menu in the bottom toolbar."
+    },
+    {
+      "action": "wait",
+      "delayMs": 1200,
+      "label": "Tools menu open",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "[role=\"menuitem\"]:has-text(\"Forward Engineering\")",
+      "label": "Launch Forward Engineering",
+      "narration": "Pick Forward Engineering."
+    },
+    {
+      "action": "wait",
+      "selector": "text=Forward Engineer",
+      "label": "FE wizard visible",
+      "narration": "The Forward Engineering wizard walks through the options...",
+      "timeoutMs": 15000
+    },
+    {
+      "action": "wait",
+      "delayMs": 2500,
+      "label": "Linger on Overview step",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Next\")",
+      "label": "Next: Option Selection",
+      "narration": "what to include..."
+    },
+    {
+      "action": "wait",
+      "delayMs": 2000,
+      "label": "Option Selection",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Next\")",
+      "label": "Next: Owner Override",
+      "narration": "schema owners..."
+    },
+    {
+      "action": "wait",
+      "delayMs": 2000,
+      "label": "Owner Override",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Next\")",
+      "label": "Next: Object Filter",
+      "narration": "object filters..."
+    },
+    {
+      "action": "wait",
+      "delayMs": 2000,
+      "label": "Object Filter",
+      "narration": ""
+    },
+    {
+      "action": "click",
+      "selector": "button:has-text(\"Next\")",
+      "label": "Next: Preview",
+      "narration": "and straight to the SQL preview."
+    },
+    {
+      "action": "wait",
+      "selector": "text=Schema generation preview",
+      "label": "SQL preview rendered",
+      "narration": "Here's the generated DDL. CREATE TABLE for every entity including the AI-added OrderLine... primary keys, foreign keys, the whole schema... ready to run against Microsoft Fabric Data Warehouse.",
+      "timeoutMs": 15000
+    },
+    {
+      "action": "wait",
+      "delayMs": 6000,
+      "label": "Linger on SQL preview",
+      "narration": ""
+    },
+    {
+      "action": "clickAt",
+      "selector": "body",
+      "x": 1399,
+      "y": 32,
+      "label": "Close the FE wizard",
+      "narration": "Close the wizard."
+    },
+    {
+      "action": "wait",
+      "delayMs": 2500,
+      "label": "Back on canvas",
+      "narration": ""
+    }
+  ]
+}

@@ -6,10 +6,12 @@ export type ActionKind =
   | "goto"
   | "click"
   | "clickAt"
+  | "dblclick"
   | "drag"
   | "type"
   | "press"
   | "setFile"
+  | "manualPause"
   | "wait"
   | "waitForCanvas"
   | "screenshot";
@@ -31,6 +33,8 @@ export interface FlowStep {
   toY?: number;
   /** For drag: how many intermediate mouse-move steps to interpolate. */
   steps?: number;
+  /** For click/dblclick: bypass actionability checks (e.g., backdrop intercepting events). */
+  force?: boolean;
   /** Optional override for the spoken narration on this step's video frame.
    *  Empty string = stay silent during this step (frame still holds for
    *  step_seconds). Omitted = fall back to the AI/label description. */
@@ -55,7 +59,15 @@ export async function executeAction(page: Page, step: FlowStep): Promise<void> {
       if (!step.selector) throw new Error(`click requires 'selector' (step: ${step.label})`);
       const loc = page.locator(step.selector).first();
       await loc.waitFor({ state: "visible", timeout });
-      await loc.click({ timeout });
+      await loc.click({ timeout, force: step.force });
+      return;
+    }
+
+    case "dblclick": {
+      if (!step.selector) throw new Error(`dblclick requires 'selector' (step: ${step.label})`);
+      const loc = page.locator(step.selector).first();
+      await loc.waitFor({ state: "visible", timeout });
+      await loc.dblclick({ timeout, force: step.force });
       return;
     }
 
@@ -142,6 +154,28 @@ export async function executeAction(page: Page, step: FlowStep): Promise<void> {
       // Screenshots are emitted by the executor after every step; this action is a no-op
       // and exists so flows can explicitly request an extra capture point if needed.
       return;
+
+    case "manualPause": {
+      // Wait for a sentinel file to appear (or vanish, depending on init).
+      // QDM_PAUSE_FILE env var overrides the default location.
+      const fs = await import("fs/promises");
+      const sentinel = process.env.QDM_PAUSE_FILE || "/tmp/qdm-continue";
+      const prompt = step.value || `create ${sentinel} when ready to continue`;
+      process.stdout.write(`\n⏸  MANUAL STEP — ${step.label}\n   ${prompt}\n   waiting for ${sentinel}...\n`);
+      // Make sure stale sentinel is gone first, so we don't unblock instantly
+      await fs.unlink(sentinel).catch(() => undefined);
+      const exists = async (p: string): Promise<boolean> => {
+        try { await fs.access(p); return true; } catch { return false; }
+      };
+      const deadline = Date.now() + (step.timeoutMs ?? 30 * 60 * 1000);
+      while (!(await exists(sentinel))) {
+        if (Date.now() > deadline) throw new Error(`manualPause timeout after ${(step.timeoutMs ?? 30 * 60 * 1000) / 1000}s`);
+        await new Promise((r) => setTimeout(r, 500));
+      }
+      await fs.unlink(sentinel).catch(() => undefined);
+      logger.info("manual step acknowledged — resuming");
+      return;
+    }
 
     default: {
       const _exhaustive: never = step.action;
